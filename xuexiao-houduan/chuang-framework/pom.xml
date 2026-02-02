@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>cn.zhangchuangla</groupId>
+        <artifactId>echo-pro</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>chuang-framework</artifactId>
+    <version>1.0.0</version>
+    <description>框架基础模块，提供核心功能支持</description>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <!-- 依赖公共模块 -->
+        <dependency>
+            <groupId>cn.zhangchuangla</groupId>
+            <artifactId>chuang-common-core</artifactId>
+        </dependency>
+
+        <!-- 依赖缓存模块 -->
+        <dependency>
+            <groupId>cn.zhangchuangla</groupId>
+            <artifactId>chuang-common-cache</artifactId>
+        </dependency>
+
+        <!-- 添加系统核心模块依赖 -->
+        <dependency>
+            <groupId>cn.zhangchuangla</groupId>
+            <artifactId>chuang-system-core</artifactId>
+        </dependency>
+
+        <!-- 添加MyBatis-Plus JSqlParser依赖，解决分页插件问题 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-jsqlparser</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Web -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- Spring Boot AOP -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+
+        <!-- WebSocket 支持 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+    </dependencies>
+</project>

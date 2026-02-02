@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.zhangchuangla.system.lostfound.mapper.BizClaimMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="ClaimResultMap" type="cn.zhangchuangla.system.lostfound.model.entity.BizClaim">
+        <id property="id" column="id"/>
+        <result property="postId" column="post_id"/>
+        <result property="claimantId" column="claimant_id"/>
+        <result property="posterId" column="poster_id"/>
+        <result property="proofText" column="proof_text"/>
+        <result property="proofImagesJson" column="proof_images_json" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result property="featureAnswers" column="feature_answers" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result property="autoMatchScore" column="auto_match_score"/>
+        <result property="rewardPayAt" column="reward_pay_at"/>
+        <result property="status" column="status"/>
+        <result property="reviewBy" column="review_by"/>
+        <result property="reviewAt" column="review_at"/>
+        <result property="reviewReason" column="review_reason"/>
+        <result property="completedAt" column="completed_at"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="postTitle" column="post_title"/>
+        <result property="postType" column="post_type"/>
+        <result property="claimantName" column="claimant_name"/>
+        <result property="posterName" column="poster_name"/>
+    </resultMap>
+
+    <!-- 分页查询用户发起的认领（带帖子信息） -->
+    <select id="selectUserClaimsWithPost" resultMap="ClaimResultMap">
+        SELECT c.*,
+               p.title AS post_title,
+               p.post_type AS post_type
+        FROM biz_claim c
+        LEFT JOIN biz_post p ON c.post_id = p.id
+        WHERE c.claimant_id = #{userId}
+        <if test="status != null">
+            AND c.status = #{status}
+        </if>
+        ORDER BY c.create_time DESC
+    </select>
+
+    <!-- 分页查询用户收到的认领（带帖子信息） -->
+    <select id="selectReceivedClaimsWithPost" resultMap="ClaimResultMap">
+        SELECT c.*,
+               p.title AS post_title,
+               p.post_type AS post_type
+        FROM biz_claim c
+        LEFT JOIN biz_post p ON c.post_id = p.id
+        WHERE c.poster_id = #{userId}
+        <if test="status != null">
+            AND c.status = #{status}
+        </if>
+        ORDER BY c.create_time DESC
+    </select>
+
+    <!-- 管理员分页查询认领列表（带帖子信息和用户信息） -->
+    <select id="selectAdminClaimsWithPost" resultMap="ClaimResultMap">
+        SELECT c.*,
+               p.title AS post_title,
+               p.post_type AS post_type,
+               u1.username AS claimant_name,
+               u2.username AS poster_name
+        FROM biz_claim c
+        LEFT JOIN biz_post p ON c.post_id = p.id
+        LEFT JOIN sys_user u1 ON c.claimant_id = u1.user_id
+        LEFT JOIN sys_user u2 ON c.poster_id = u2.user_id
+        WHERE 1=1
+        <if test="status != null">
+            AND c.status = #{status}
+        </if>
+        ORDER BY c.create_time DESC
+    </select>
+
+    <!-- 根据ID查询认领详情（带帖子信息和用户信息） -->
+    <select id="selectClaimDetailById" resultMap="ClaimResultMap">
+        SELECT c.*,
+               p.title AS post_title,
+               p.post_type AS post_type,
+               u1.username AS claimant_name,
+               u2.username AS poster_name
+        FROM biz_claim c
+        LEFT JOIN biz_post p ON c.post_id = p.id
+        LEFT JOIN sys_user u1 ON c.claimant_id = u1.user_id
+        LEFT JOIN sys_user u2 ON c.poster_id = u2.user_id
+        WHERE c.id = #{claimId}
+    </select>
+
+</mapper>

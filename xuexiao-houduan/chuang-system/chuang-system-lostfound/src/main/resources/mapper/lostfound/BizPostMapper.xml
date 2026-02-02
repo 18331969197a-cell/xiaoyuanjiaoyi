@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.zhangchuangla.system.lostfound.mapper.BizPostMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="PostResultMap" type="cn.zhangchuangla.system.lostfound.model.entity.BizPost">
+        <id property="id" column="id"/>
+        <result property="postType" column="post_type"/>
+        <result property="title" column="title"/>
+        <result property="description" column="description"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="locationId" column="location_id"/>
+        <result property="locationDetail" column="location_detail"/>
+        <result property="occurTime" column="occur_time"/>
+        <result property="storagePlace" column="storage_place"/>
+        <result property="deadlineTime" column="deadline_time"/>
+        <result property="imagesJson" column="images_json" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result property="rewardAmount" column="reward_amount"/>
+        <result property="rewardStatus" column="reward_status"/>
+        <result property="rewardDesc" column="reward_desc"/>
+        <result property="featureTokens" column="feature_tokens" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result property="status" column="status"/>
+        <result property="viewCount" column="view_count"/>
+        <result property="favCount" column="fav_count"/>
+        <result property="commentCount" column="comment_count"/>
+        <result property="isTop" column="is_top"/>
+        <result property="isRecommend" column="is_recommend"/>
+        <result property="auditBy" column="audit_by"/>
+        <result property="auditAt" column="audit_at"/>
+        <result property="auditReason" column="audit_reason"/>
+        <result property="contactInfo" column="contact_info"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="isDeleted" column="is_deleted"/>
+        <result property="categoryName" column="category_name"/>
+        <result property="locationName" column="location_name"/>
+        <result property="createdByName" column="created_by_name"/>
+    </resultMap>
+
+    <!-- 分页查询帖子（带关联信息） -->
+    <select id="selectPostPage" resultMap="PostResultMap">
+        SELECT p.*,
+               c.name AS category_name,
+               l.name AS location_name,
+               u.nickname AS created_by_name
+        FROM biz_post p
+        LEFT JOIN biz_category c ON p.category_id = c.id
+        LEFT JOIN biz_location l ON p.location_id = l.id
+        LEFT JOIN sys_user u ON p.created_by = u.user_id
+        WHERE p.is_deleted = '0'
+        <if test="userId != null">
+            AND p.created_by = #{userId}
+        </if>
+        <if test="status != null">
+            AND p.status = #{status}
+        </if>
+        <if test="postType != null">
+            AND p.post_type = #{postType}
+        </if>
+        <if test="categoryId != null">
+            AND p.category_id = #{categoryId}
+        </if>
+        <if test="locationId != null">
+            AND p.location_id = #{locationId}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (p.title LIKE CONCAT('%', #{keyword}, '%') OR p.description LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY p.is_top DESC, p.create_time DESC
+    </select>
+
+    <!-- 增加浏览量 -->
+    <update id="incrementViewCount">
+        UPDATE biz_post
+        SET view_count = view_count + 1
+        WHERE id = #{postId}
+    </update>
+
+    <!-- 批量增加浏览量 -->
+    <update id="incrementViewCountBatch">
+        UPDATE biz_post
+        SET view_count = view_count + #{count}
+        WHERE id = #{postId}
+    </update>
+
+    <!-- 更新收藏数 -->
+    <update id="updateFavCount">
+        UPDATE biz_post
+        SET fav_count = fav_count + #{delta}
+        WHERE id = #{postId}
+    </update>
+
+    <!-- 更新评论数 -->
+    <update id="updateCommentCount">
+        UPDATE biz_post
+        SET comment_count = comment_count + #{delta}
+        WHERE id = #{postId}
+    </update>
+
+    <!-- 查询单个帖子（带关联信息） -->
+    <select id="selectPostById" resultMap="PostResultMap">
+        SELECT p.*,
+               c.name AS category_name,
+               l.name AS location_name,
+               u.nickname AS created_by_name
+        FROM biz_post p
+        LEFT JOIN biz_category c ON p.category_id = c.id
+        LEFT JOIN biz_location l ON p.location_id = l.id
+        LEFT JOIN sys_user u ON p.created_by = u.user_id
+        WHERE p.id = #{postId}
+    </select>
+
+    <!-- 批量查询帖子（带关联信息） -->
+    <select id="selectPostsByIds" resultMap="PostResultMap">
+        SELECT p.*,
+               c.name AS category_name,
+               l.name AS location_name,
+               u.nickname AS created_by_name
+        FROM biz_post p
+        LEFT JOIN biz_category c ON p.category_id = c.id
+        LEFT JOIN biz_location l ON p.location_id = l.id
+        LEFT JOIN sys_user u ON p.created_by = u.user_id
+        WHERE p.id IN
+        <foreach collection="postIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
+</mapper>

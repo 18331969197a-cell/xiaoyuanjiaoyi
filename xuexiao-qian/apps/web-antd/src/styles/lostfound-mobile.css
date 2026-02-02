@@ -1,0 +1,388 @@
+/**
+ * 失物招领平台移动端响应式样式
+ */
+
+/* 移动端断点: < 768px */
+@media screen and (max-width: 767px) {
+  /* 首页容器 */
+  .home-container {
+    padding: 8px !important;
+  }
+
+  .home-container .p-4 {
+    padding: 8px !important;
+  }
+
+  /* 顶部操作栏 */
+  .home-container .flex-wrap {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+
+  .home-container .flex-wrap .gap-3 {
+    gap: 8px !important;
+  }
+
+  /* 搜索框 */
+  .home-container .ant-input-search {
+    width: 100% !important;
+  }
+
+  /* 发布按钮组 */
+  .home-container .flex.gap-2 {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .home-container .flex.gap-2 .ant-btn {
+    flex: 1;
+  }
+
+  /* 帖子卡片 */
+  .post-card {
+    margin-bottom: 8px !important;
+  }
+
+  .post-card .ant-card-body {
+    padding: 12px !important;
+  }
+
+  /* 帖子内容区 */
+  .post-card .flex.gap-4 {
+    flex-direction: column;
+    gap: 12px !important;
+  }
+
+  /* 图片区域 */
+  .post-image-area,
+  .post-image-placeholder {
+    width: 100% !important;
+    height: 200px !important;
+  }
+
+  .post-image-area .ant-image {
+    width: 100% !important;
+    height: 200px !important;
+  }
+
+  .post-image-area .ant-image img {
+    width: 100% !important;
+    height: 200px !important;
+    object-fit: cover;
+  }
+
+  /* 标签换行 */
+  .post-card .flex-wrap {
+    gap: 4px !important;
+  }
+
+  .post-card .ant-tag {
+    margin-bottom: 4px;
+  }
+
+  /* 互动栏 */
+  .post-card .ant-space {
+    gap: 12px !important;
+  }
+
+  /* 分页 */
+  .ant-pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .ant-pagination-options {
+    display: none;
+  }
+
+  /* 评论抽屉 */
+  .ant-drawer-content-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* 搜索页面 */
+  .search-form .ant-form-item {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  .search-form .ant-form-item-control {
+    width: 100%;
+  }
+
+  .search-form .ant-select,
+  .search-form .ant-input,
+  .search-form .ant-picker {
+    width: 100% !important;
+  }
+
+  /* 详情页 */
+  .detail-container .ant-row {
+    flex-direction: column;
+  }
+
+  .detail-container .ant-col {
+    flex: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* 图片画廊 */
+  .image-gallery {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* 表单页面 */
+  .publish-form .ant-form-item-label {
+    padding-bottom: 4px;
+  }
+
+  .publish-form .ant-upload-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  /* 礼品列表 */
+  .gift-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* 消息列表 */
+  .message-list .ant-list-item {
+    padding: 12px 8px !important;
+  }
+
+  /* 个人中心 */
+  .profile-stats {
+    flex-wrap: wrap;
+  }
+
+  .profile-stats .stat-item {
+    width: 50%;
+    margin-bottom: 12px;
+  }
+
+  /* 隐藏桌面端元素 */
+  .desktop-only {
+    display: none !important;
+  }
+
+  /* 显示移动端元素 */
+  .mobile-only {
+    display: block !important;
+  }
+}
+
+/* 平板断点: 768px - 1024px */
+@media screen and (min-width: 768px) and (max-width: 1024px) {
+  .home-container {
+    padding: 12px !important;
+  }
+
+  .post-image-area,
+  .post-image-placeholder {
+    width: 150px !important;
+    height: 150px !important;
+  }
+
+  .post-image-area .ant-image {
+    width: 150px !important;
+    height: 150px !important;
+  }
+
+  .image-gallery {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+
+  .gift-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+/* 桌面端 */
+@media screen and (min-width: 1025px) {
+  .mobile-only {
+    display: none !important;
+  }
+}
+
+/* 通用移动端优化 */
+@media screen and (max-width: 1024px) {
+  /* 触摸友好的按钮 */
+  .ant-btn {
+    min-height: 36px;
+  }
+
+  /* 更大的点击区域 */
+  .ant-tag {
+    padding: 4px 8px;
+    cursor: pointer;
+  }
+
+  /* 优化滚动 */
+  .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 固定底部操作栏 */
+  .fixed-bottom-bar {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    padding: 12px 16px;
+    background: #fff;
+    box-shadow: 0 -2px 8px rgb(0 0 0 / 10%);
+  }
+
+  /* 为固定底部栏留出空间 */
+  .has-fixed-bottom {
+    padding-bottom: 70px;
+  }
+}
+
+/* 暗色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .fixed-bottom-bar {
+    background: #1f1f1f;
+    box-shadow: 0 -2px 8px rgb(0 0 0 / 30%);
+  }
+}
+
+/* ========================================
+   侧边栏菜单 Hover 微动效
+   适配 Vben Admin 的 vben-menu 组件
+   ======================================== */
+
+/* 菜单项基础过渡 */
+.vben-menu .vben-menu-item,
+.vben-menu .vben-sub-menu__title {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Hover 时整体右移 + 渐变背景 */
+.vben-menu .vben-menu-item:hover,
+.vben-menu .vben-sub-menu__title:hover {
+  background: linear-gradient(
+    90deg,
+    rgb(24 144 255 / 8%) 0%,
+    transparent 100%
+  ) !important;
+  transform: translateX(4px);
+}
+
+/* 菜单图标动效 */
+.vben-menu .vben-menu-item .vben-menu-item__icon,
+.vben-menu .vben-sub-menu__title .vben-menu-item__icon,
+.vben-menu .vben-menu-item svg,
+.vben-menu .vben-sub-menu__title svg {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+/* Hover 时图标缩放 + 旋转微动 */
+.vben-menu .vben-menu-item:hover .vben-menu-item__icon,
+.vben-menu .vben-sub-menu__title:hover .vben-menu-item__icon,
+.vben-menu .vben-menu-item:hover svg,
+.vben-menu .vben-sub-menu__title:hover svg {
+  color: #1890ff !important;
+  transform: scale(1.15) rotate(-3deg);
+}
+
+/* 选中态样式增强 */
+.vben-menu .vben-menu-item.is-active {
+  position: relative;
+  background: linear-gradient(
+    90deg,
+    rgb(24 144 255 / 12%) 0%,
+    rgb(24 144 255 / 4%) 100%
+  ) !important;
+}
+
+/* 选中态左侧指示条 */
+.vben-menu .vben-menu-item.is-active::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 3px;
+  height: 60%;
+  content: '';
+  background: linear-gradient(180deg, #1890ff 0%, #40a9ff 100%);
+  border-radius: 0 2px 2px 0;
+  transform: translateY(-50%);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+
+  to {
+    height: 60%;
+    opacity: 1;
+  }
+}
+
+/* 选中态图标保持高亮 */
+.vben-menu .vben-menu-item.is-active .vben-menu-item__icon,
+.vben-menu .vben-menu-item.is-active svg {
+  color: #1890ff !important;
+  transform: scale(1.1);
+}
+
+/* 子菜单展开箭头动效 */
+.vben-menu .vben-sub-menu__arrow {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.vben-menu
+  .vben-sub-menu.is-opened
+  > .vben-sub-menu__title
+  .vben-sub-menu__arrow {
+  transform: rotate(180deg) !important;
+}
+
+/* 折叠态菜单图标居中动效 */
+.vben-menu.is-collapse .vben-menu-item,
+.vben-menu.is-collapse .vben-sub-menu__title {
+  display: flex;
+  justify-content: center;
+  padding: 0 !important;
+}
+
+.vben-menu.is-collapse .vben-menu-item:hover,
+.vben-menu.is-collapse .vben-sub-menu__title:hover {
+  background: rgb(24 144 255 / 10%) !important;
+  border-radius: 8px;
+  transform: scale(1.1);
+}
+
+/* 涟漪点击效果 */
+.vben-menu .vben-menu-item:active,
+.vben-menu .vben-sub-menu__title:active {
+  transform: translateX(4px) scale(0.98);
+}
+
+/* 暗色模式适配 */
+html.dark .vben-menu .vben-menu-item:hover,
+html.dark .vben-menu .vben-sub-menu__title:hover {
+  background: linear-gradient(
+    90deg,
+    rgb(24 144 255 / 15%) 0%,
+    transparent 100%
+  ) !important;
+}
+
+html.dark .vben-menu .vben-menu-item.is-active {
+  background: linear-gradient(
+    90deg,
+    rgb(24 144 255 / 20%) 0%,
+    rgb(24 144 255 / 5%) 100%
+  ) !important;
+}

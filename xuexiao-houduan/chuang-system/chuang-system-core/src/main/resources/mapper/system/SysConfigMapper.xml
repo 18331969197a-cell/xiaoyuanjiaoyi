@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.zhangchuangla.system.core.mapper.SysConfigMapper">
+
+    <resultMap id="BaseResultMap" type="cn.zhangchuangla.system.core.model.entity.SysConfig">
+        <id property="configId" column="config_id"/>
+        <result property="configName" column="config_name"/>
+        <result property="configKey" column="config_key"/>
+        <result property="configValue" column="config_value"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+    <select id="listSysConfig" resultMap="BaseResultMap">
+        select
+        config_id,
+        config_name,
+        config_key,
+        config_value,
+        create_by,
+        create_time,
+        update_by,
+        update_time,
+        remark
+        from sys_config
+        <where>
+            <if test="request !=null">
+                <if test="request.configName != null and request.configName != ''">
+                    and config_name like concat('%', #{request.configName}, '%')
+                </if>
+                <if test="request.configKey != null and request.configKey != ''">
+                    and config_key = #{request.configKey}
+                </if>
+                <if test="request.configValue != null and request.configValue != ''">
+                    and config_value = #{request.configValue}
+                </if>
+                <if test="request.remark != null and request.remark != ''">
+                    and remark like concat('%', #{request.remark}, '%')
+                </if>
+            </if>
+        </where>
+    </select>
+
+</mapper>

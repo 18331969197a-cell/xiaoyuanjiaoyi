@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.zhangchuangla.system.lostfound.mapper.BizLocationMapper">
+
+    <!-- 统计地点下的帖子数量 -->
+    <select id="countPostsByLocationId" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM biz_post
+        WHERE location_id = #{locationId}
+          AND is_deleted = '0'
+    </select>
+
+</mapper>

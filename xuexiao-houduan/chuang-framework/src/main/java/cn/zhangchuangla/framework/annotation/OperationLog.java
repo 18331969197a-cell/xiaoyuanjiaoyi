@@ -1,0 +1,43 @@
+package cn.zhangchuangla.framework.annotation;
+
+
+import cn.zhangchuangla.common.core.enums.BusinessType;
+
+import java.lang.annotation.*;
+
+/**
+ * 操作日志记录注解，用于标记需要记录系统操作日志的方法
+ *
+ * @author Chuang
+ */
+@Target({ElementType.PARAMETER, ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface OperationLog {
+
+
+    /**
+     * 模块
+     */
+    String title() default "";
+
+    /**
+     * 功能
+     */
+    BusinessType businessType() default BusinessType.OTHER;
+
+    /**
+     * 是否保存请求的参数
+     */
+    boolean saveRequestData() default true;
+
+    /**
+     * 是否保存响应的参数
+     */
+    boolean isSaveResponseData() default true;
+
+    /**
+     * 排除指定的请求参数
+     */
+    String[] excludeParamNames() default {};
+}

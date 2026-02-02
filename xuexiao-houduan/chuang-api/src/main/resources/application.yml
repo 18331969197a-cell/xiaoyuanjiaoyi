@@ -1,0 +1,80 @@
+app:
+  upload-path: /Users/zhangchuang/DevelopFileUpload
+
+# 本地文件上传配置
+file:
+  upload:
+    path: C:/uploads/lostfound
+    url-prefix: /uploads
+    # 前端public目录路径，上传的文件会保存到这里
+    frontend-path: C:/Users/f/Desktop/开题报告_校园互助失物招领平台_/前端/echoPro-front-end/apps/web-antd/public/uploads
+spring:
+  application:
+    name: 系统
+    version: 0.9.0
+  profiles:
+    active: druid,quartz,monitor,storage,cors #激活配置文件(已禁用rabbitmq)
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+
+# 缓存配置
+cache:
+  mode: local
+  local:
+    max-size: 10000
+    expire-seconds: 3600
+
+management:
+  health:
+    rabbit:
+      enabled: false
+#开发环境数据库文件
+server:
+  port: 8080
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    tags-sorter: alpha
+    operations-sorter: alpha
+    display-request-duration: true
+    syntax-highlight:
+      activated: true
+  default-produces-media-type: application/json
+  default-consumes-media-type: application/json
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  type-aliases-package: cn.zhangchuangla.**.entity
+  mapper-locations:
+    - classpath*:mapper/**/**.xml
+  global-config:
+    db-config:
+      logic-delete-field: isDeleted  # 全局逻辑删除字段名
+      logic-delete-value: 1         # 逻辑已删除值
+      logic-not-delete-value: 0     # 逻辑未删除值
+
+security:
+  secret: zhangchuang2726zhangchuang2726zhangchuang2726
+  header: Authorization
+  password-config:
+    lock-time: 3
+    max-retry-count: -1
+  session:
+    access-token-expire-time: 7200000
+    refresh-token-expire-time: 2592000
+    max-sessions-per-client:
+      pc: -1
+      mini-program: -1
+      web: -1
+      unknown: -1
+      mobile: -1
+    multi-device: true
+    token-prefix: null

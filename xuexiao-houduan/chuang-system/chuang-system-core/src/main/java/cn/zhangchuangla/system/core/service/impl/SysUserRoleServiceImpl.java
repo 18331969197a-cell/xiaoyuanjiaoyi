@@ -1,0 +1,98 @@
+package cn.zhangchuangla.system.core.service.impl;
+
+import cn.zhangchuangla.common.core.utils.Assert;
+import cn.zhangchuangla.system.core.mapper.SysUserRoleMapper;
+import cn.zhangchuangla.system.core.model.entity.SysUserRole;
+import cn.zhangchuangla.system.core.service.SysUserRoleService;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.RequiredArgsConstructor;
+import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+/**
+ * 用户角色关联实现类
+ *
+ * @author Chuang
+ */
+@Service
+@RequiredArgsConstructor
+public class SysUserRoleServiceImpl extends ServiceImpl<SysUserRoleMapper, SysUserRole>
+        implements SysUserRoleService {
+
+    private final SysUserRoleMapper sysUserRoleMapper;
+
+
+    /**
+     * 根据用户id获取用户角色
+     *
+     * @param userId 用户ID
+     * @return 用户角色
+     */
+    @Override
+    public List<SysUserRole> getUserRoleByUserId(Long userId) {
+        LambdaQueryWrapper<SysUserRole> sysUserRoleLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        sysUserRoleLambdaQueryWrapper.eq(SysUserRole::getUserId, userId);
+        return list(sysUserRoleLambdaQueryWrapper);
+    }
+
+    /**
+     * 删除用户角色关联角色信息
+     *
+     * @param userId 用户ID
+     */
+    @Override
+    public void deleteUserRoleAssociation(Long userId) {
+        Assert.isTrue(userId > 0, "角色ID不能小于0");
+        sysUserRoleMapper.deleteUserRoleByUserId(userId);
+    }
+
+    /**
+     * 删除用户角色关联角色信息
+     *
+     * @param userIds 用户ID集合
+     */
+    @Override
+    public void deleteUserRoleAssociation(List<Long> userIds) {
+        Assert.isTrue(CollectionUtils.isNotEmpty(userIds), "用户ID集合不能为空");
+        sysUserRoleMapper.deleteUserRoleByUserIds(userIds);
+    }
+
+    /**
+     * 添加用户角色关联
+     *
+     * @param roleId 角色ID列表
+     * @param userId 用户ID
+     */
+    @Override
+    public void addUserRoleAssociation(List<Long> roleId, Long userId) {
+        if (roleId == null || roleId.isEmpty()) {
+            return;
+        }
+        roleId.forEach(role -> {
+            SysUserRole sysUserRole = new SysUserRole();
+            sysUserRole.setRoleId(role);
+            sysUserRole.setUserId(userId);
+            save(sysUserRole);
+        });
+    }
+
+    /**
+     * 判断角色是否被用户使用
+     *
+     * @param roleIds 角色ID列表
+     * @return true使用，false未使用
+     */
+    @Override
+    public boolean isRoleAssignedToUsers(List<Long> roleIds) {
+        Assert.isTrue(CollectionUtils.isNotEmpty(roleIds), "角色ID列表不能为空");
+        LambdaQueryWrapper<SysUserRole> sysUserRoleLambdaQueryWrapper = new LambdaQueryWrapper<SysUserRole>().in(SysUserRole::getRoleId, roleIds);
+        return count(sysUserRoleLambdaQueryWrapper) > 0;
+    }
+}
+
+
+
+

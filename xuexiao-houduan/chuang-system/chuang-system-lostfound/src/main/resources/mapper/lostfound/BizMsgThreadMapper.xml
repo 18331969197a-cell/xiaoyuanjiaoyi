@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.zhangchuangla.system.lostfound.mapper.BizMsgThreadMapper">
+
+    <!-- 查找两个用户之间的会话 -->
+    <select id="findThread" resultType="cn.zhangchuangla.system.lostfound.model.entity.BizMsgThread">
+        SELECT *
+        FROM biz_msg_thread
+        WHERE ((user_a_id = #{userA} AND user_b_id = #{userB})
+            OR (user_a_id = #{userB} AND user_b_id = #{userA}))
+          <if test="postId != null">
+              AND post_id = #{postId}
+          </if>
+          <if test="claimId != null">
+              AND claim_id = #{claimId}
+          </if>
+        LIMIT 1
+    </select>
+
+    <!-- 更新用户未读数 -->
+    <update id="updateUnreadCount">
+        UPDATE biz_msg_thread
+        SET user_a_unread = CASE WHEN user_a_id = #{userId} THEN user_a_unread + #{delta} ELSE user_a_unread END,
+            user_b_unread = CASE WHEN user_b_id = #{userId} THEN user_b_unread + #{delta} ELSE user_b_unread END
+        WHERE id = #{threadId}
+    </update>
+
+    <!-- 重置用户未读数为0 -->
+    <update id="resetUnreadCount">
+        UPDATE biz_msg_thread
+        SET user_a_unread = CASE WHEN user_a_id = #{userId} THEN 0 ELSE user_a_unread END,
+            user_b_unread = CASE WHEN user_b_id = #{userId} THEN 0 ELSE user_b_unread END
+        WHERE id = #{threadId}
+    </update>
+
+</mapper>

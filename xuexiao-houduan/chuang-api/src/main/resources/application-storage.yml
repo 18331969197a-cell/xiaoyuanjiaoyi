@@ -1,0 +1,46 @@
+# 存储系统配置
+storage:
+  # 当数据库中未找到主存储配置时，将使用此默认配置。设置为 "local" 表示优先使用本地存储；
+  # 若设置为 "minio"，则表示在数据库配置不可用时降级使用 MinIO 配置；若未指定 MinIO 配置，则仍将默认使用本地存储。
+  active-type: local
+  # 本地存储配置
+  local:
+    uploadPath: ${app.upload-path}
+    file-domain: http://localhost:8080/
+    real-delete: false
+
+  # MinIO 配置
+  minio:
+    endpoint:
+    access-key:
+    secret-key:
+    bucket-name:
+    file-domain:
+    real-delete: false
+
+  # 阿里云 OSS 配置
+  aliyun-oss:
+    endpoint:
+    access-key-id:
+    access-key-secret:
+    bucket-name:
+    file-domain:
+    real-delete: false
+
+  # 腾讯云 COS 配置
+  tencent-cos:
+    region:
+    secret-id:
+    secret-key:
+    bucket-name:
+    file-domain:
+    real-delete: false
+  # 亚马逊S3
+  amazon-s3:
+    endpoint:
+    bucket-name:
+    region:
+    access-key:
+    secret-key:
+    file-domain:
+    real-delete: false

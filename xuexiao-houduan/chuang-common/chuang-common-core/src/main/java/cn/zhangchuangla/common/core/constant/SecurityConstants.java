@@ -1,0 +1,64 @@
+package cn.zhangchuangla.common.core.constant;
+
+/**
+ * @author Chuang
+ * <p>
+ * created on 2025/4/15 16:01
+ */
+public class SecurityConstants {
+
+    public static final String ROLE_PREFIX = "ROLE_";
+    public static final String DEVICE_TYPE = "device_type";
+    public static final String DEVICE_NAME = "device_name";
+    public static final String LOGIN_TIME = "login_time";
+    public static final String USER_NAME = "username";
+    public static final String USER_ID = "userId";
+    public static final String REFRESH_TOKEN_ID = "refreshTokenId";
+    public static final String LOCATION = "location";
+    public static final String CLAIM_KEY_SESSION_ID = "session";
+    public static final String CLAIM_KEY_USERNAME = "username";
+    public static final String IP = "ip";
+
+    /**
+     * 接口白名单,设置后不需要认证直接可以访问，注意！一旦设置白名单系统中需要获取用户的信息将失效！
+     */
+    public static final String[] WHITELIST = {
+            "/auth/login",
+            "/captcha",
+            "/auth/register",
+            "/auth/refresh",
+            "/druid/**",
+            "/ws/**"
+    };
+    /**
+     * 静态资源白名单
+     */
+    public static final String[] STATIC_RESOURCES_WHITELIST = {
+            "/static/**",
+            "/profile/**",
+            "/uploads/**",
+            "/**.html",
+            "/**.css",
+            "/**.js",
+            "/favicon.ico"
+    };
+
+    /**
+     * 接口文档接口白名单
+     */
+    public static final String[] SWAGGER_WHITELIST = {
+            "/swagger-ui.html",
+            "/swagger-ui/**",
+            "/v3/**",
+            "/webjars/**"
+    };
+
+    /**
+     * WebSocket 匿名用户允许订阅的目的地白名单
+     * 只有在此列表中的目的地才允许匿名用户订阅
+     */
+    public static final String[] WEBSOCKET_ANONYMOUS_SUBSCRIBE_WHITELIST = {
+            "/topic/public",
+            "/topic/notifications"
+    };
+}

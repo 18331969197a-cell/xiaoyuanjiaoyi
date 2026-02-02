@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.zhangchuangla.system.core.mapper.SysUserMapper">
+
+    <!-- 用户 + 部门组合 DTO 映射 -->
+    <resultMap id="UserDeptMap" type="cn.zhangchuangla.system.core.model.dto.SysUserDeptDto">
+        <id property="userId" column="user_id"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="nickname" column="nickname"/>
+        <result property="avatar" column="avatar"/>
+        <result property="gender" column="gender"/>
+        <result property="phone" column="phone"/>
+        <result property="email" column="email"/>
+        <result property="deptId" column="dept_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="isDeleted" column="is_deleted"/>
+        <result property="status" column="status"/>
+        <result property="remark" column="remark"/>
+        <association property="sysDept" javaType="SysDept" resultMap="deptResult"/>
+    </resultMap>
+
+    <!-- 基础用户信息映射 -->
+    <resultMap id="BaseResultMap" type="cn.zhangchuangla.common.core.entity.security.SysUser">
+        <id property="userId" column="user_id"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="region" column="region"/>
+        <result property="signature" column="signature"/>
+        <result property="postId" column="post_id"/>
+        <result property="nickname" column="nickname"/>
+        <result property="avatar" column="avatar"/>
+        <result property="gender" column="gender"/>
+        <result property="phone" column="phone"/>
+        <result property="email" column="email"/>
+        <result property="deptId" column="dept_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="isDeleted" column="is_deleted"/>
+        <result property="status" column="status"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <!-- 部门信息映射 -->
+    <resultMap id="deptResult" type="SysDept">
+        <id property="deptId" column="dept_dept_id"/>
+        <result property="deptName" column="dept_name"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="manager" column="manager"/>
+        <result property="description" column="description"/>
+        <result property="createTime" column="dept_create_time"/>
+        <result property="updateTime" column="dept_update_time"/>
+        <result property="createBy" column="dept_create_by"/>
+        <result property="updateBy" column="dept_update_by"/>
+        <result property="remark" column="dept_remark"/>
+    </resultMap>
+
+    <!-- 可复用 SELECT 字段 -->
+    <sql id="baseSelect">
+        select user.user_id     as user_id,
+               user.username    as username,
+               user.password    as password,
+               user.region    as region,
+               user.signature as signature,
+               user.nickname    as nickname,
+               user.avatar      as avatar,
+               user.gender      as gender,
+               user.phone       as phone,
+               user.email       as email,
+               user.dept_id     as dept_id,
+               user.post_id   as post_id,
+               user.status      as status,
+               user.create_time as create_time,
+               user.update_time as update_time,
+               user.create_by   as create_by,
+               user.update_by   as update_by,
+               user.is_deleted  as is_deleted,
+               user.remark      as remark,
+               dept.dept_id     as dept_dept_id,
+               dept.dept_name   as dept_name,
+               dept.parent_id   as parent_id,
+               dept.manager     as manager,
+               dept.description as description,
+               dept.create_time as dept_create_time,
+               dept.update_time as dept_update_time,
+               dept.create_by   as dept_create_by,
+               dept.update_by   as dept_update_by,
+               dept.remark      as dept_remark
+        from sys_user user
+                 left join sys_dept dept on user.dept_id = dept.dept_id
+    </sql>
+
+    <!-- 用户列表查询 -->
+    <select id="listUser" resultMap="UserDeptMap">
+        <include refid="baseSelect"/>
+        <where>
+            <if test="request != null">
+                <if test="request.deptId != null">
+                    and `user`.dept_id = #{request.deptId}
+                </if>
+                <if test="request.username != null and request.username != ''">
+                    and `user`.username like concat('%', #{request.username}, '%')
+                </if>
+                <if test="request.nickName != null and request.nickName != ''">
+                    and `user`.nickname like concat('%', #{request.nickName}, '%')
+                </if>
+                <if test="request.email != null and request.email != ''">
+                    and `user`.email like concat('%', #{request.email}, '%')
+                </if>
+                <if test="request.phone != null and request.phone != ''">
+                    and `user`.phone like concat('%', #{request.phone}, '%')
+                </if>
+                <if test="request.gender != null">
+                    and `user`.gender = #{request.gender}
+                </if>
+                <if test="request.status != null">
+                    and `user`.status = #{request.status}
+                </if>
+                <if test="request.remark != null and request.remark != ''">
+                    and `user`.remark like concat('%', #{request.remark}, '%')
+                </if>
+                <if test="request.startTime != null">
+                    and date(create_time) >= #{request.startTime}
+                </if>
+                <if test="request.endTime != null">
+                    and date(create_time) &lt;= #{request.endTime}
+                </if>
+            </if>
+            and user.is_deleted = 0
+        </where>
+    </select>
+
+    <!-- 校验邮箱重复 -->
+    <select id="countOtherUserEmails" resultType="java.lang.Integer">
+        select count(*)
+        from sys_user
+        where email = #{email}
+          and user_id != #{userId}
+    </select>
+
+    <!-- 校验手机号重复 -->
+    <select id="isPhoneExist" resultType="java.lang.Integer">
+        select count(*)
+        from sys_user
+        where phone = #{phone}
+          and user_id != #{userId}
+    </select>
+
+    <!-- 根据用户名查询用户信息 -->
+    <select id="getUserInfoByUsername" resultMap="BaseResultMap">
+        <include refid="baseSelect"/>
+        where user.username = #{username}
+        and user.is_deleted = 0
+    </select>
+
+    <select id="exportListUser" resultMap="BaseResultMap">
+        <include refid="baseSelect"/>
+        <where>
+            <if test="request != null">
+                <if test="request.deptId != null">
+                    and `user`.dept_id = #{request.deptId}
+                </if>
+                <if test="request.username != null and request.username != ''">
+                    and `user`.username like concat('%', #{request.username}, '%')
+                </if>
+                <if test="request.nickName != null and request.nickName != ''">
+                    and `user`.nickname like concat('%', #{request.nickName}, '%')
+                </if>
+                <if test="request.email != null and request.email != ''">
+                    and `user`.email like concat('%', #{request.email}, '%')
+                </if>
+                <if test="request.phone != null and request.phone != ''">
+                    and `user`.phone like concat('%', #{request.phone}, '%')
+                </if>
+                <if test="request.gender != null">
+                    and `user`.gender = #{request.gender}
+                </if>
+                <if test="request.status != null">
+                    and `user`.status = #{request.status}
+                </if>
+                <if test="request.remark != null and request.remark != ''">
+                    and `user`.remark like concat('%', #{request.remark}, '%')
+                </if>
+                <if test="request.startTime != null">
+                    and date(create_time) >= #{request.startTime}
+                </if>
+                <if test="request.endTime != null">
+                    and date(create_time) &lt;= #{request.endTime}
+                </if>
+            </if>
+            and user.is_deleted = 0
+        </where>
+    </select>
+</mapper>

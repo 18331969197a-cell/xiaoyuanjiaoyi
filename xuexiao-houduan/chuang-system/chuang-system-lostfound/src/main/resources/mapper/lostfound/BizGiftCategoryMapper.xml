@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.zhangchuangla.system.lostfound.mapper.BizGiftCategoryMapper">
+
+    <!-- 统计分类下的礼品数量 -->
+    <select id="countGiftsByCategoryId" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM biz_gift
+        WHERE category_id = #{categoryId}
+          AND deleted = 0
+    </select>
+
+</mapper>

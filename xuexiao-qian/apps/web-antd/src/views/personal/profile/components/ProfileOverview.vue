@@ -1,0 +1,472 @@
+<script lang="ts" setup>
+import type { UploadFile } from 'ant-design-vue';
+
+import type { profileType } from '#/api/personal/profile';
+import type {
+  FileUploadResponse,
+  ImageUploadResponse,
+} from '#/components/Upload/types';
+
+import { onMounted, ref } from 'vue';
+
+import { Briefcase, Edit, Email, MapPin, Phone } from '@vben/icons';
+
+import { Input, Select, Textarea } from 'ant-design-vue';
+
+import { overviewInfo, updateProfile } from '#/api/personal/profile';
+import { UploadAvatar } from '#/components/Upload';
+
+interface Emits {
+  (e: 'editProfile'): void;
+}
+
+defineOptions({
+  name: 'ProfileOverview',
+});
+
+const emit = defineEmits<Emits>();
+
+// 加载状态
+const loading = ref(false);
+
+// 编辑模式状态
+const isEditing = ref(false);
+
+// 从API获取的用户数据
+const userInfo = ref<profileType.ProfileOverviewInfoVo>({
+  username: '',
+  nickname: '',
+  avatar: '',
+  gender: '',
+  email: '',
+  phone: '',
+  region: '',
+  signature: '',
+  deptName: '',
+  post: '',
+  roles: [],
+});
+
+// 编辑表单数据（仅可编辑字段）
+const editForm = ref<profileType.ProfileUpdateRequest & { phone?: string }>({
+  nickName: '',
+  avatar: '',
+  gender: '',
+  region: '',
+  signature: '',
+});
+
+// 加载用户资料数据
+async function loadUserProfile() {
+  try {
+    loading.value = true;
+    const response = await overviewInfo();
+    userInfo.value = response as profileType.ProfileOverviewInfoVo;
+  } catch (error) {
+    console.error('Failed to load user profile:', error);
+  } finally {
+    loading.value = false;
+  }
+}
+
+// 处理头像上传成功
+async function handleAvatarUploadSuccess(
+  response: FileUploadResponse | ImageUploadResponse,
+  _file: UploadFile,
+) {
+  try {
+    loading.value = true;
+
+    // 更新头像
+    const updateData = {
+      nickName: userInfo.value.nickname || '',
+      avatar: response.fileUrl,
+      gender: userInfo.value.gender || '',
+      region: userInfo.value.region || '',
+      signature: userInfo.value.signature || '',
+    };
+
+    await updateProfile(updateData);
+    await loadUserProfile();
+  } catch (error) {
+    console.error('Failed to update avatar:', error);
+  } finally {
+    loading.value = false;
+  }
+}
+
+// 处理编辑资料
+function handleEditProfile() {
+  isEditing.value = true;
+  editForm.value = {
+    nickName: userInfo.value.nickname || '',
+    avatar: userInfo.value.avatar || '',
+    gender: userInfo.value.gender || '',
+    region: userInfo.value.region || '',
+    signature: userInfo.value.signature || '',
+    phone: userInfo.value.phone || '',
+  };
+  emit('editProfile');
+}
+
+// 处理保存资料
+async function handleSaveProfile() {
+  try {
+    loading.value = true;
+    await updateProfile(editForm.value);
+    await loadUserProfile();
+    isEditing.value = false;
+  } catch (error) {
+    console.error('Failed to update profile:', error);
+  } finally {
+    loading.value = false;
+  }
+}
+
+// 处理取消编辑
+function handleCancelEdit() {
+  isEditing.value = false;
+}
+
+// 初始化组件
+onMounted(() => {
+  loadUserProfile();
+});
+</script>
+
+<template>
+  <!-- Loading State -->
+  <div v-if="loading" class="space-y-6">
+    <!-- 用户头像和基本信息骨架屏 -->
+    <div
+      class="dark:border-border dark:bg-card rounded-lg border border-gray-200 bg-white p-6"
+    >
+      <div class="flex items-center space-x-6">
+        <div
+          class="dark:bg-muted h-24 w-24 animate-pulse rounded-full bg-gray-200"
+        ></div>
+        <div class="flex-1 space-y-3">
+          <div
+            class="dark:bg-muted h-6 w-32 animate-pulse rounded bg-gray-200"
+          ></div>
+          <div
+            class="dark:bg-muted h-4 w-48 animate-pulse rounded bg-gray-200"
+          ></div>
+          <div
+            class="dark:bg-muted h-4 w-40 animate-pulse rounded bg-gray-200"
+          ></div>
+        </div>
+        <div
+          class="dark:bg-muted h-10 w-20 animate-pulse rounded bg-gray-200"
+        ></div>
+      </div>
+    </div>
+
+    <!-- 详细信息骨架屏 -->
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div
+        v-for="i in 6"
+        :key="i"
+        class="dark:border-border dark:bg-card rounded-lg border border-gray-200 bg-white p-4"
+      >
+        <div class="flex items-center space-x-3">
+          <div
+            class="dark:bg-muted h-8 w-8 animate-pulse rounded bg-gray-200"
+          ></div>
+          <div class="flex-1 space-y-2">
+            <div
+              class="dark:bg-muted h-4 w-20 animate-pulse rounded bg-gray-200"
+            ></div>
+            <div
+              class="dark:bg-muted h-5 w-32 animate-pulse rounded bg-gray-200"
+            ></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div v-else class="space-y-6">
+    <!-- Section Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="dark:text-foreground text-2xl font-bold text-gray-900">
+          概览
+        </h2>
+        <p class="dark:text-muted-foreground mt-1 text-gray-600">
+          查看和管理您的基本信息
+        </p>
+      </div>
+      <div class="flex space-x-2">
+        <button
+          v-if="!isEditing"
+          class="dark:focus:ring-offset-background flex items-center rounded-lg"
+          @click="handleEditProfile"
+        >
+          <Edit class="mr-2 h-4 w-4" />
+          编辑资料
+        </button>
+        <button
+          v-if="isEditing"
+          class="dark:focus:ring-offset-background flex items-center rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+          @click="handleSaveProfile"
+        >
+          保存
+        </button>
+        <button
+          v-if="isEditing"
+          class="dark:focus:ring-offset-background flex items-center rounded-lg bg-gray-600 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+          @click="handleCancelEdit"
+        >
+          取消
+        </button>
+      </div>
+    </div>
+
+    <!-- Profile Card -->
+    <div
+      class="dark:border-border dark:bg-card rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
+    >
+      <!-- Avatar and Basic Info -->
+      <div class="flex items-start space-x-6">
+        <!-- Avatar with crop upload -->
+        <div class="flex flex-col items-center">
+          <UploadAvatar
+            v-model:value="userInfo.avatar"
+            :size="96"
+            @success="handleAvatarUploadSuccess"
+          />
+        </div>
+
+        <!-- Basic Info -->
+        <div class="flex-1">
+          <div>
+            <h3
+              class="dark:text-foreground text-xl font-semibold text-gray-900"
+            >
+              {{ userInfo.nickname || userInfo.username }}
+            </h3>
+          </div>
+          <p class="dark:text-muted-foreground text-gray-600">
+            {{ userInfo.username }}
+          </p>
+
+          <!-- Role Info -->
+          <div class="mt-4">
+            <div class="flex flex-wrap gap-2">
+              <span
+                v-for="role in userInfo.roles"
+                :key="role"
+                class="inline-flex items-center rounded-full"
+              >
+                {{ role }}
+              </span>
+            </div>
+          </div>
+
+          <div
+            class="dark:text-muted-foreground mt-2 max-w-[380px] break-words text-sm text-gray-500"
+          >
+            {{ userInfo.signature || '-' }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detailed Information -->
+    <div v-if="!isEditing" class="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <!-- Personal Information -->
+      <div
+        class="dark:border-border dark:bg-card rounded-lg border border-gray-200 bg-white p-6"
+      >
+        <h4
+          class="dark:text-foreground mb-4 text-lg font-semibold text-gray-900"
+        >
+          个人信息
+        </h4>
+        <dl class="space-y-3">
+          <div class="flex items-center">
+            <dt
+              class="dark:text-muted-foreground flex items-center text-sm font-medium text-gray-600"
+            >
+              <Briefcase class="mr-2 h-4 w-4" />
+              职位
+            </dt>
+            <dd class="dark:text-foreground ml-auto text-sm text-gray-900">
+              {{ userInfo.post || '-' }}
+            </dd>
+          </div>
+          <div class="flex items-center">
+            <dt
+              class="dark:text-muted-foreground flex items-center text-sm font-medium text-gray-600"
+            >
+              <MapPin class="mr-2 h-4 w-4" />
+              地区
+            </dt>
+            <dd class="dark:text-foreground ml-auto text-sm text-gray-900">
+              {{ userInfo.region || '-' }}
+            </dd>
+          </div>
+          <div class="flex items-center">
+            <dt
+              class="dark:text-muted-foreground flex items-center text-sm font-medium text-gray-600"
+            >
+              <Briefcase class="mr-2 h-4 w-4" />
+              部门
+            </dt>
+            <dd class="dark:text-foreground ml-auto text-sm text-gray-900">
+              {{ userInfo.deptName || '-' }}
+            </dd>
+          </div>
+        </dl>
+      </div>
+
+      <div
+        class="dark:border-border dark:bg-card rounded-lg border border-gray-200 bg-white p-6"
+      >
+        <h4
+          class="dark:text-foreground mb-4 text-lg font-semibold text-gray-900"
+        >
+          联系方式
+        </h4>
+        <dl class="space-y-3">
+          <div class="flex items-center">
+            <dt
+              class="dark:text-muted-foreground flex items-center text-sm font-medium text-gray-600"
+            >
+              <Phone class="mr-2 h-4 w-4" />
+              手机号
+            </dt>
+            <dd class="dark:text-foreground ml-auto text-sm text-gray-900">
+              {{ userInfo.phone || '-' }}
+            </dd>
+          </div>
+          <div class="flex items-center">
+            <dt
+              class="dark:text-muted-foreground flex items-center text-sm font-medium text-gray-600"
+            >
+              <Email class="mr-2 h-4 w-4" />
+              邮箱
+            </dt>
+            <dd class="dark:text-foreground ml-auto text-sm text-gray-900">
+              {{ userInfo.email || '-' }}
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+
+    <!-- Edit Form -->
+    <div v-if="isEditing" class="space-y-6">
+      <!-- Basic Information Edit Form -->
+      <div
+        class="dark:border-border dark:bg-card rounded-lg border border-gray-200 bg-white p-6"
+      >
+        <h4
+          class="dark:text-foreground mb-4 text-lg font-semibold text-gray-900"
+        >
+          编辑基本信息
+        </h4>
+        <form class="space-y-4">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <!-- Nickname -->
+            <div>
+              <label
+                class="dark:text-muted-foreground block text-sm font-medium text-gray-700"
+              >
+                昵称
+              </label>
+              <Input
+                v-model:value="editForm.nickName"
+                placeholder="请输入昵称"
+                class="mt-1"
+              />
+            </div>
+
+            <!-- Gender -->
+            <div>
+              <label
+                class="dark:text-muted-foreground block text-sm font-medium text-gray-700"
+              >
+                性别
+              </label>
+              <Select
+                v-model:value="editForm.gender"
+                placeholder="请选择性别"
+                class="mt-1 w-full"
+              >
+                <Select.Option value="男">男</Select.Option>
+                <Select.Option value="女">女</Select.Option>
+              </Select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <!-- Region -->
+            <div>
+              <label
+                class="dark:text-muted-foreground block text-sm font-medium text-gray-700"
+              >
+                地区
+              </label>
+              <Input
+                v-model:value="editForm.region"
+                placeholder="请输入地区"
+                class="mt-1"
+              />
+            </div>
+          </div>
+
+          <!-- Signature -->
+          <div>
+            <label
+              class="dark:text-muted-foreground block text-sm font-medium text-gray-700"
+            >
+              个性签名
+            </label>
+            <Textarea
+              v-model:value="editForm.signature"
+              :rows="3"
+              placeholder="请输入个性签名"
+              class="mt-1"
+            />
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+button * {
+  cursor: inherit;
+}
+
+input,
+textarea {
+  cursor: text;
+}
+
+div,
+span,
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+label,
+dt,
+dd {
+  cursor: default;
+}
+</style>

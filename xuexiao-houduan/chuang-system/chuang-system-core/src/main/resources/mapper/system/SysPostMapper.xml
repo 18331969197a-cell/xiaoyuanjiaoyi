@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.zhangchuangla.system.core.mapper.SysPostMapper">
+
+    <resultMap id="BaseResultMap" type="cn.zhangchuangla.system.core.model.entity.SysPost">
+        <id property="id" column="id"/>
+        <result property="postCode" column="post_code"/>
+        <result property="postName" column="post_name"/>
+        <result property="sort" column="sort"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+    <select id="listPost" resultMap="BaseResultMap">
+        select id, post_code, post_name, sort, status, create_time, update_time, create_by, update_by, remark
+        from sys_post
+        <where>
+            <if test="request.postCode != null and request.postCode != ''">
+                and post_code like concat('%', #{request.postCode}, '%')
+            </if>
+            <if test="request.postName != null and request.postName != ''">
+                and post_name like concat('%', #{request.postName}, '%')
+            </if>
+            <if test="request.status != null">
+                and status = #{request.status}
+            </if>
+            <if test="request.startTime != null and request.endTime != null">
+                AND DATE(create_time) BETWEEN #{request.startTime} AND #{request.endTime}
+            </if>
+        </where>
+        order by sort desc
+    </select>
+
+    <select id="exportPostList" resultMap="BaseResultMap">
+        select id, post_code, post_name, sort, status, create_time, update_time, create_by, update_by, remark
+        from sys_post
+        <where>
+            <if test="request.postCode != null and request.postCode != ''">
+                and post_code like concat('%', #{request.postCode}, '%')
+            </if>
+            <if test="request.postName != null and request.postName != ''">
+                and post_name like concat('%', #{request.postName}, '%')
+            </if>
+            <if test="request.status != null">
+                and status = #{request.status}
+            </if>
+            <if test="request.startTime != null and request.endTime != null">
+                AND DATE(create_time) BETWEEN #{request.startTime} AND #{request.endTime}
+            </if>
+        </where>
+        order by sort desc
+    </select>
+
+</mapper>
