@@ -1,5 +1,9 @@
 <script lang="ts" setup>
-import type { BizMessage, BizMsgThread } from '#/api/lostfound/message';
+import type {
+  BizMessage,
+  BizMsgThread,
+  ChatRiskSummary,
+} from '#/api/lostfound/message';
 
 import { nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -8,6 +12,7 @@ import { Page } from '@vben/common-ui';
 import { useUserStore } from '@vben/stores';
 
 import {
+  Alert,
   Avatar,
   Button,
   Card,
@@ -20,6 +25,7 @@ import {
 import {
   getThreadDetail,
   getThreadMessages,
+  getThreadRiskSummary,
   markAsRead,
   sendMessage,
 } from '#/api/lostfound/message';
@@ -45,6 +51,7 @@ const thread = ref<MessageThread | null>(null);
 const messages = ref<Message[]>([]);
 const newMessage = ref('');
 const messageListRef = ref<HTMLElement | null>(null);
+const riskSummary = ref<ChatRiskSummary | null>(null);
 
 // 当前用户ID（从用户状态获取）
 const currentUserId = ref<number>(0);
@@ -86,14 +93,7 @@ async function loadMessages() {
   loading.value = true;
   try {
     const res = await getThreadMessages(threadId);
-    // 兼容分页格式和数组格式
-    if (Array.isArray(res)) {
-      messages.value = res;
-    } else if (res && res.records) {
-      messages.value = res.records;
-    } else {
-      messages.value = [];
-    }
+    messages.value = Array.isArray(res) ? res : [];
     // 标记已读
     await markAsRead(threadId);
     // 滚动到底部
@@ -102,6 +102,17 @@ async function loadMessages() {
     console.error('加载消息失败:', error);
   } finally {
     loading.value = false;
+  }
+}
+
+async function loadRiskSummary() {
+  const threadId = Number(route.params.threadId);
+  if (!threadId) return;
+  try {
+    riskSummary.value = await getThreadRiskSummary(threadId);
+  } catch (error) {
+    console.error('加载风险摘要失败:', error);
+    riskSummary.value = null;
   }
 }
 
@@ -187,6 +198,7 @@ onMounted(async () => {
   }
   // 加载会话详情
   await loadThreadDetail();
+  await loadRiskSummary();
   // 加载消息
   loadMessages();
   // 每10秒刷新一次
@@ -219,6 +231,17 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
+        <Alert
+          v-if="riskSummary?.risky"
+          class="mt-3"
+          :type="riskSummary.riskLevel === 'HIGH' ? 'error' : 'warning'"
+          show-icon
+          :message="riskSummary.riskLevel === 'HIGH' ? '风险提醒（高）' : '风险提醒'"
+          :description="
+            riskSummary.hint ||
+            `该用户有 ${riskSummary.totalCount || 0} 条风险记录，请谨慎沟通。`
+          "
+        />
       </Card>
 
       <!-- 消息列表 -->

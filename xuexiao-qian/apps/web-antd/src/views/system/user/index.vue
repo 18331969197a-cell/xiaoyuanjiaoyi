@@ -16,6 +16,7 @@ import { ref } from 'vue';
 import { useAccess } from '@vben/access';
 import { ColPage, useVbenDrawer, useVbenModal } from '@vben/common-ui';
 import { Plus } from '@vben/icons';
+import { preferences } from '@vben/preferences';
 
 import {
   Image as AImage,
@@ -34,6 +35,7 @@ import {
   getUserList,
   updateUser,
 } from '#/api/system/user/user';
+import { resolveLegacyImage } from '#/utils/assets';
 
 import { useColumns, useGridFormSchema } from './data';
 import Dept from './modules/dept.vue';
@@ -199,6 +201,10 @@ function onRefresh() {
   gridApi.query();
 }
 
+function resolveUserAvatar(avatar?: string) {
+  return resolveLegacyImage(avatar, preferences.app.defaultAvatar);
+}
+
 /**
  * 创建新用户
  */
@@ -332,7 +338,7 @@ function onResetPasswordSuccess(username: string) {
       <Grid table-title="用户列表">
         <template #avatar="{ row }">
           <AImage
-            :src="row.avatar"
+            :src="resolveUserAvatar(row.avatar)"
             :preview="false"
             :width="36"
             :height="36"

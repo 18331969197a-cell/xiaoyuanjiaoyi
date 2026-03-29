@@ -3,6 +3,7 @@ import type { PageResult } from '@vben/types';
 import type { ExchangeOrder, Gift, GiftCategory } from './gifts';
 
 import { requestClient } from '#/api/request';
+import { normalizePageResult } from '#/api/utils/page';
 
 // ==================== 管理端礼品接口 ====================
 
@@ -20,10 +21,7 @@ async function adminGetGiftList(params?: {
     '/lostfound/admin/gifts',
     { params },
   );
-  return {
-    rows: (res as any).records || res.rows || [],
-    total: res.total || 0,
-  };
+  return normalizePageResult(res, params);
 }
 
 /**
@@ -80,13 +78,7 @@ async function adminGetCategoryList(params?: {
     { params },
   );
   // 后端直接返回数组或分页对象
-  const data = Array.isArray(res)
-    ? res
-    : res.records || res.rows || res.data || [];
-  return {
-    rows: data,
-    total: Array.isArray(res) ? data.length : res.total || data.length,
-  };
+  return normalizePageResult<GiftCategory>(res, params);
 }
 
 /**
@@ -129,10 +121,7 @@ async function adminGetOrderList(params?: {
     '/lostfound/admin/exchange/orders',
     { params },
   );
-  return {
-    rows: (res as any).records || res.rows || [],
-    total: res.total || 0,
-  };
+  return normalizePageResult(res, params);
 }
 
 /**

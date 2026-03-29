@@ -133,6 +133,13 @@ public interface ClaimService {
     void startHandover(Long claimId);
 
     /**
+     * 交接取消后恢复为已通过状态
+     *
+     * @param claimId 认领ID
+     */
+    void reopenFromHandover(Long claimId);
+
+    /**
      * 管理员审核通过认领
      *
      * @param claimId 认领ID

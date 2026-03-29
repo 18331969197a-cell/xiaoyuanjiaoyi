@@ -16,6 +16,7 @@ import { IconifyIcon } from '@vben/icons';
 import { Button, message, Modal, Space, Upload } from 'ant-design-vue';
 
 import { FileApi } from '#/api/common/file';
+import { resolveLegacyImage } from '#/utils/assets';
 
 interface Props extends BaseUploadProps {
   /** 头像大小 */
@@ -66,7 +67,8 @@ const avatarStyle = computed(() => ({
   height: `${props.size}px`,
 }));
 
-const hasAvatar = computed(() => !!props.value);
+const avatarSrc = computed(() => resolveLegacyImage(props.value, ''));
+const hasAvatar = computed(() => !!avatarSrc.value);
 
 // 文件选择处理
 function customRequest(options: any) {
@@ -208,7 +210,7 @@ function cancelCrop() {
       >
         <!-- 已有头像时显示图片 -->
         <div v-if="hasAvatar" class="avatar-preview">
-          <img :src="value" alt="头像" class="avatar-image" />
+          <img :src="avatarSrc" alt="头像" class="avatar-image" />
           <div class="avatar-overlay">
             <IconifyIcon icon="carbon:camera" class="upload-icon" />
           </div>

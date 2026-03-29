@@ -38,6 +38,8 @@ export interface OnlineUserQueryRequest extends BaseRequest {
  * 在线登录用户信息
  */
 export interface OnlineLoginUser {
+  /** 用户ID */
+  userId?: string;
   /** 会话ID */
   accessTokenId?: string;
   /** 刷新令牌ID */

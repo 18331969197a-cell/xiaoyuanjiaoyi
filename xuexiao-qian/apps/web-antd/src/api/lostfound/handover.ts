@@ -25,6 +25,14 @@ export interface BizHandover {
   confirmedByToAt?: string; // 接收方确认时间
   cancelReason?: string;
   remark?: string;
+  receiptSubmittedBy?: number;
+  receiptSubmittedAt?: string;
+  receiptActualTime?: string;
+  receiptLocation?: string;
+  receiptEvidenceJson?: string[];
+  receiptRemark?: string;
+  receiptConfirmedBy?: number;
+  receiptConfirmedAt?: string;
   createTime?: string;
   updateTime?: string;
 }
@@ -53,10 +61,55 @@ async function confirmHandover(id: number, confirmCode?: string) {
 }
 
 /**
+ * 提交线下完成回传
+ */
+async function submitHandoverReceipt(id: number, data: BizHandover) {
+  return requestClient.post(`/lostfound/handover/${id}/receipt`, data);
+}
+
+/**
+ * 确认线下回传
+ */
+async function confirmHandoverReceipt(id: number) {
+  return requestClient.post(`/lostfound/handover/${id}/receipt/confirm`);
+}
+
+/**
  * 取消交接
  */
 async function cancelHandover(id: number, reason: string) {
   return requestClient.post(`/lostfound/handover/${id}/cancel`, null, {
+    params: { reason },
+  });
+}
+
+/**
+ * 改约
+ */
+async function rescheduleHandover(
+  id: number,
+  data: Pick<BizHandover, 'handoverTime' | 'location'>,
+  reason?: string,
+) {
+  return requestClient.post(`/lostfound/handover/${id}/reschedule`, data, {
+    params: { reason },
+  });
+}
+
+/**
+ * 上报争议
+ */
+async function disputeHandover(id: number, reason?: string) {
+  return requestClient.post(`/lostfound/handover/${id}/dispute`, null, {
+    params: { reason },
+  });
+}
+
+/**
+ * 上报爽约
+ */
+async function markHandoverNoShow(id: number, reason?: string) {
+  return requestClient.post(`/lostfound/handover/${id}/no-show`, null, {
     params: { reason },
   });
 }
@@ -72,7 +125,7 @@ async function getHandoverById(id: number) {
  * 获取我的交接记录
  */
 async function getMyHandovers(params?: HandoverQueryParams) {
-  return requestClient.get<PageResult<BizHandover[]>>(
+  return requestClient.get<PageResult<BizHandover>>(
     '/lostfound/handover/my',
     { params },
   );
@@ -88,8 +141,13 @@ async function getHandoverByClaimId(claimId: number) {
 export {
   cancelHandover,
   confirmHandover,
+  confirmHandoverReceipt,
   createHandover,
+  disputeHandover,
   getHandoverByClaimId,
   getHandoverById,
   getMyHandovers,
+  markHandoverNoShow,
+  rescheduleHandover,
+  submitHandoverReceipt,
 };

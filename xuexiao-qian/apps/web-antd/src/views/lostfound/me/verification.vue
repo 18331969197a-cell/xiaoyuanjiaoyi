@@ -26,6 +26,7 @@ import {
   getVerificationStatus,
   submitVerification,
 } from '#/api/lostfound/verification';
+import { closeVerificationPrompt } from '#/composables/useVerificationPrompt';
 
 const loading = ref(false);
 const submitting = ref(false);
@@ -91,6 +92,7 @@ function formatTime(time: string) {
 }
 
 onMounted(() => {
+  closeVerificationPrompt();
   loadStatus();
 });
 </script>

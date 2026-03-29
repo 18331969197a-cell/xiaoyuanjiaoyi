@@ -1,13 +1,12 @@
 <script lang="ts" setup>
 import type { VxeTableGridOptions } from '#/adapter/vxe-table';
 
-import { onMounted, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 
 import { Page } from '@vben/common-ui';
 
 import { Button, Input, message, Modal, Select } from 'ant-design-vue';
-import dayjs from 'dayjs';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
@@ -19,7 +18,6 @@ import {
 import { useColumns, useGridFormSchema } from './data';
 
 const router = useRouter();
-const route = useRoute();
 
 // 处理弹窗
 const resolveVisible = ref(false);
@@ -82,7 +80,7 @@ function onActionClick({ code, row }: { code: string; row: any }) {
 
 const [Grid, gridApi] = useVbenVxeGrid({
   formOptions: {
-    fieldMappingTime: [['createTime', ['startTime', 'endTime']]],
+    fieldMappingTime: [['createTime', ['startTime', 'endTime'], 'YYYY-MM-DD HH:mm:ss']],
     schema: useGridFormSchema(),
     submitOnChange: true,
   },
@@ -124,47 +122,17 @@ const [Grid, gridApi] = useVbenVxeGrid({
 function showAllReports() {
   gridApi.formApi?.resetForm();
   gridApi.query();
-  setViewMode(undefined);
 }
 
 function showRiskAlerts() {
-  gridApi.formApi?.setValues({
-    targetType: 'USER',
-    status: 'RESOLVED',
-    resolveAction: 'ban_user',
-  });
-  gridApi.query();
-  setViewMode('risk');
+  router.push('/lostfound/admin/risk-alerts');
 }
 
 function showRiskAlertsToday() {
-  gridApi.formApi?.setValues({
-    targetType: 'USER',
-    status: 'RESOLVED',
-    resolveAction: 'ban_user',
-    createTime: [dayjs().startOf('day'), dayjs().endOf('day')],
+  router.push({
+    path: '/lostfound/admin/risk-alerts',
+    query: { preset: 'today' },
   });
-  gridApi.query();
-  setViewMode('risk-today');
-}
-
-function setViewMode(mode?: string) {
-  const nextQuery = { ...route.query };
-  if (mode) {
-    nextQuery.view = mode;
-  } else {
-    delete nextQuery.view;
-  }
-  router.replace({ query: nextQuery });
-}
-
-function applyViewMode() {
-  const view = route.query.view;
-  if (view === 'risk') {
-    showRiskAlerts();
-  } else if (view === 'risk-today') {
-    showRiskAlertsToday();
-  }
 }
 
 // 处理举报
@@ -202,9 +170,6 @@ async function handleReject() {
   }
 }
 
-onMounted(() => {
-  applyViewMode();
-});
 </script>
 
 <template>

@@ -248,8 +248,8 @@ public class SecurityConfig {
                 "base-uri 'self';",
                 // 表单提交：允许同源
                 "form-action 'self';",
-                // 框架祖先：允许前端应用嵌入（支持localhost和内网地址）
-                "frame-ancestors 'self' http://localhost:* http://127.0.0.1:* https://localhost:* https://127.0.0.1:* http://192.168.*:* https://192.168.*:* http://10.*:* https://10.*:* http://172.16.*:* https://172.16.*:*;",
+                // 框架祖先：允许本地前端应用嵌入
+                "frame-ancestors 'self' http://localhost:* http://127.0.0.1:* https://localhost:* https://127.0.0.1:*;",
                 // 框架源：允许同源
                 "frame-src 'self';"
         );

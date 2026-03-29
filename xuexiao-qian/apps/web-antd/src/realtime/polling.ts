@@ -48,7 +48,7 @@ async function poll() {
     const messageStore = useMessageStore();
     await messageStore.fetchUnreadCount();
 
-    const currentMessageCount = messageStore.unreadCount;
+    const currentMessageCount = messageStore.unreadCount.value;
     if (lastMessageCount >= 0 && currentMessageCount > lastMessageCount) {
       notification.info({
         message: '新消息',

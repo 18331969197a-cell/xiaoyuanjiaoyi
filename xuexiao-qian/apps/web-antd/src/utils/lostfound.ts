@@ -124,6 +124,18 @@ export const claimStatusConfig: Record<
   COMPLETED: { color: 'success', label: '已完成' },
 };
 
+const claimablePostStatuses = new Set(['APPROVED', 'PUBLISHED', 'CLAIMING']);
+
+/**
+ * 判断帖子是否允许发起认领
+ * @param status 帖子状态
+ * @returns 是否允许认领
+ */
+export function canInitiateClaim(status?: string): boolean {
+  if (!status) return false;
+  return claimablePostStatuses.has(status.trim().toUpperCase());
+}
+
 /**
  * 订单状态配置
  */

@@ -9,8 +9,11 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
 
 /**
  * 举报控制器
@@ -45,15 +48,20 @@ public class ReportController extends BaseController {
 
     @Operation(summary = "获取举报列表")
     @GetMapping("/admin/list")
-    @PreAuthorize("@ss.hasPermission('lostfound:report:list')")
+    @PreAuthorize("@ss.hasPermission('lostfound:report:list') || @ss.hasPermission('lostfound:risk-alert:list')")
     public AjaxResult<Page<BizReport>> adminList(
             @RequestParam(value = "pageNum", defaultValue = "1") Integer pageNum,
             @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
             @RequestParam(value = "targetType", required = false) String targetType,
+            @RequestParam(value = "targetId", required = false) Long targetId,
             @RequestParam(value = "status", required = false) String status,
-            @RequestParam(value = "resolveAction", required = false) String resolveAction) {
+            @RequestParam(value = "resolveAction", required = false) String resolveAction,
+            @RequestParam(value = "startTime", required = false)
+            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime startTime,
+            @RequestParam(value = "endTime", required = false)
+            @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endTime) {
         Page<BizReport> page = new Page<>(pageNum, pageSize);
-        return AjaxResult.success(reportService.listReports(page, targetType, status, resolveAction));
+        return AjaxResult.success(reportService.listReports(page, targetType, targetId, status, resolveAction, startTime, endTime));
     }
 
     @Operation(summary = "处理举报")

@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { ExchangeOrder } from '#/api/lostfound/gifts';
+import type { Key } from 'ant-design-vue/es/_util/type';
 
 import { onMounted, ref } from 'vue';
 
@@ -103,8 +104,9 @@ async function loadOrders() {
 }
 
 // 状态切换
-function onStatusChange(status: string) {
-  selectedStatus.value = status === 'all' ? undefined : status;
+function onStatusChange(status: Key) {
+  const statusValue = String(status);
+  selectedStatus.value = statusValue === 'all' ? undefined : statusValue;
   currentPage.value = 1;
   loadOrders();
 }

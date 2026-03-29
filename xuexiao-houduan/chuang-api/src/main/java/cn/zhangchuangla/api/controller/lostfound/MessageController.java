@@ -5,7 +5,9 @@ import cn.zhangchuangla.common.core.entity.base.AjaxResult;
 import cn.zhangchuangla.framework.annotation.OperationLog;
 import cn.zhangchuangla.system.lostfound.model.entity.BizMessage;
 import cn.zhangchuangla.system.lostfound.model.entity.BizMsgThread;
+import cn.zhangchuangla.system.lostfound.model.vo.ChatRiskSummaryVO;
 import cn.zhangchuangla.system.lostfound.service.MessageThreadService;
+import cn.zhangchuangla.system.lostfound.service.RiskEventService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,6 +28,7 @@ import java.util.List;
 public class MessageController extends BaseController {
 
     private final MessageThreadService messageThreadService;
+    private final RiskEventService riskEventService;
 
     @Operation(summary = "发送私信")
     @PostMapping
@@ -54,6 +57,13 @@ public class MessageController extends BaseController {
     @GetMapping("/thread/{threadId}/detail")
     public AjaxResult<BizMsgThread> getThreadDetail(@PathVariable("threadId") Long threadId) {
         return AjaxResult.success(messageThreadService.getThreadDetail(threadId, getUserId()));
+    }
+
+    @Operation(summary = "获取会话风险提示")
+    @GetMapping("/thread/{threadId}/risk-summary")
+    public AjaxResult<ChatRiskSummaryVO> getThreadRiskSummary(@PathVariable("threadId") Long threadId) {
+        Long targetUserId = messageThreadService.getCounterpartyUserId(threadId, getUserId());
+        return AjaxResult.success(riskEventService.buildChatRiskSummary(targetUserId));
     }
 
     @Operation(summary = "标记消息已读")

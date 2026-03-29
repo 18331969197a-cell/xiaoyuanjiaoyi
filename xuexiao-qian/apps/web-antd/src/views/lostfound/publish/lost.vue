@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { Page } from '@vben/common-ui';
@@ -13,7 +13,6 @@ import {
   FormItem,
   Input,
   message,
-  Modal,
   Select,
   Upload,
 } from 'ant-design-vue';
@@ -23,8 +22,17 @@ import { getCategoryTree, getLocationTree } from '#/api/lostfound/base';
 import { createPost, saveDraft } from '#/api/lostfound/post';
 import type { PostCreateParams } from '#/api/lostfound/post';
 import { getVerificationStatus } from '#/api/lostfound/verification';
+import {
+  closeVerificationPrompt,
+  openVerificationPrompt,
+} from '#/composables/useVerificationPrompt';
 
 const accessStore = useAccessStore();
+
+type PostCreateFormData = Omit<PostCreateParams, 'rewardAmount'> & {
+  imagesJson: string[];
+  rewardAmount?: number | string;
+};
 
 // 上传配置
 const uploadAction = computed(
@@ -42,7 +50,7 @@ const checkingVerification = ref(true);
 const isVerified = ref(false);
 
 // 表单数据
-const formData = ref<PostCreateParams>({
+const formData = ref<PostCreateFormData>({
   postType: 'LOST',
   title: '',
   categoryId: undefined,
@@ -63,8 +71,19 @@ const categoryOptions = ref<any[]>([]);
 const locationOptions = ref<any[]>([]);
 const fileList = ref<UploadFile[]>([]);
 
+function validateOptionalRewardAmount(_: any, value: unknown) {
+  if (value === '' || value === null || value === undefined) {
+    return Promise.resolve();
+  }
+  const numericValue = Number(value);
+  if (Number.isNaN(numericValue) || numericValue < 0) {
+    return Promise.reject(new Error('悬赏金额需为非负数字'));
+  }
+  return Promise.resolve();
+}
+
 // 表单规则（增强版）
-const rules = {
+const rules: Record<string, any[]> = {
   title: [
     { required: true, message: '请输入物品名称' },
     { min: 2, max: 50, message: '物品名称长度应在2-50个字符之间' },
@@ -79,11 +98,8 @@ const rules = {
   contactInfo: [{ max: 100, message: '联系方式不能超过100个字符' }],
   rewardAmount: [
     {
-      type: 'number',
-      transform: (value: any) =>
-        value === '' || value === null ? undefined : Number(value),
-      min: 0,
-      message: '悬赏金额需为非负数字',
+      validator: validateOptionalRewardAmount,
+      trigger: ['blur', 'change'],
     },
   ],
 };
@@ -95,31 +111,19 @@ async function checkVerification() {
     const status = await getVerificationStatus();
     isVerified.value = status.verified;
     if (!status.verified) {
-      showVerificationModal();
+      openVerificationPrompt(router, {
+        onCancel: () => router.back(),
+      });
     }
   } catch (error) {
     console.error('检查认证状态失败:', error);
     isVerified.value = false;
-    showVerificationModal();
+    openVerificationPrompt(router, {
+      onCancel: () => router.back(),
+    });
   } finally {
     checkingVerification.value = false;
   }
-}
-
-// 显示认证提示弹窗
-function showVerificationModal() {
-  Modal.confirm({
-    title: '需要身份认证',
-    content: '发布失物招领信息前需要完成身份认证，是否前往认证？',
-    okText: '去认证',
-    cancelText: '返回',
-    onOk() {
-      router.push('/lostfound/me/verification');
-    },
-    onCancel() {
-      router.back();
-    },
-  });
 }
 
 // 加载选项
@@ -160,7 +164,7 @@ function handleUploadChange(info: any) {
 }
 
 // 日期变化
-function onDateChange(date: any, dateString: string) {
+function onDateChange(_date: any, dateString: string) {
   formData.value.occurTime = dateString;
 }
 
@@ -187,7 +191,7 @@ function buildPayload(): PostCreateParams {
 // 提交发布
 async function handleSubmit() {
   if (!isVerified.value) {
-    showVerificationModal();
+    openVerificationPrompt(router);
     return;
   }
   try {
@@ -200,7 +204,7 @@ async function handleSubmit() {
     if (error.errorFields) {
       message.warning('请填写完整信息');
     } else if (error.message?.includes('认证')) {
-      showVerificationModal();
+      openVerificationPrompt(router);
     } else {
       message.error('发布失败');
     }
@@ -230,6 +234,10 @@ function goBack() {
 onMounted(() => {
   checkVerification();
   loadOptions();
+});
+
+onUnmounted(() => {
+  closeVerificationPrompt();
 });
 </script>
 

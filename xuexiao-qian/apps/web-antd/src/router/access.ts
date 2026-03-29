@@ -1,6 +1,7 @@
 import type {
   ComponentRecordType,
   GenerateMenuAndRoutesOptions,
+  MenuRecordRaw,
 } from '@vben/types';
 
 import { generateAccessible } from '@vben/access';
@@ -14,6 +15,45 @@ import { $t } from '#/locales';
 
 const forbiddenComponent = () => import('#/views/_core/fallback/forbidden.vue');
 
+function isAdminRole(role: string) {
+  return (
+    role === 'super_admin' ||
+    role === 'admin' ||
+    role === 'demo' ||
+    role === 'admindemo' ||
+    role.toLowerCase().includes('admin')
+  );
+}
+
+function keepAdminMenu(path = '') {
+  return (
+    path === '/workspace' ||
+    path.startsWith('/system') ||
+    path.startsWith('/monitor') ||
+    path.startsWith('/tool') ||
+    path.startsWith('/lostfound/admin')
+  );
+}
+
+function filterAdminMenus(menus: MenuRecordRaw[]): MenuRecordRaw[] {
+  return menus.reduce<MenuRecordRaw[]>((result, menu) => {
+    const children = menu.children ? filterAdminMenus(menu.children) : undefined;
+    const shouldKeep =
+      keepAdminMenu(menu.path) || Boolean(children && children.length > 0);
+
+    if (!shouldKeep) {
+      return result;
+    }
+
+    result.push({
+      ...menu,
+      children,
+    });
+
+    return result;
+  }, []);
+}
+
 async function generateAccess(options: GenerateMenuAndRoutesOptions) {
   const pageMap: ComponentRecordType = import.meta.glob('../views/**/*.vue');
 
@@ -22,7 +62,7 @@ async function generateAccess(options: GenerateMenuAndRoutesOptions) {
     IFrameView,
   };
 
-  return await generateAccessible(preferences.app.accessMode, {
+  const access = await generateAccessible(preferences.app.accessMode, {
     ...options,
     fetchMenuListAsync: async () => {
       message.loading({
@@ -37,6 +77,13 @@ async function generateAccess(options: GenerateMenuAndRoutesOptions) {
     layoutMap,
     pageMap,
   });
+
+  const roles = options.roles ?? [];
+  if (roles.some(isAdminRole)) {
+    access.accessibleMenus = filterAdminMenus(access.accessibleMenus);
+  }
+
+  return access;
 }
 
 export { generateAccess };

@@ -69,7 +69,7 @@ public class CspHeaderFilter extends OncePerRequestFilter {
                 "object-src 'none';",
                 "base-uri 'self';",
                 "form-action 'self';",
-                "frame-ancestors 'self' http://localhost:* https://localhost:* http://192.168.*:*;",
+                "frame-ancestors 'self' http://localhost:* https://localhost:* http://127.0.0.1:* https://127.0.0.1:*;",
                 "frame-src 'self';"
         );
     }

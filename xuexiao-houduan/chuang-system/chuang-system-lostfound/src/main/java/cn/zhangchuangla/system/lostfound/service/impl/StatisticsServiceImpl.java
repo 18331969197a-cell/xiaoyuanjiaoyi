@@ -54,7 +54,7 @@ public class StatisticsServiceImpl implements StatisticsService {
         
         // 成功认领数
         long successCount = claimMapper.selectCount(new LambdaQueryWrapper<BizClaim>()
-                .eq(BizClaim::getStatus, ClaimStatusEnum.APPROVED.name()));
+                .eq(BizClaim::getStatus, ClaimStatusEnum.COMPLETED.name()));
         stats.put("successCount", successCount);
         
         // 今日新增
@@ -89,13 +89,13 @@ public class StatisticsServiceImpl implements StatisticsService {
         // 成功认领数
         long successClaims = claimMapper.selectCount(new LambdaQueryWrapper<BizClaim>()
                 .eq(BizClaim::getClaimantId, userId)
-                .eq(BizClaim::getStatus, ClaimStatusEnum.APPROVED.name()));
+                .eq(BizClaim::getStatus, ClaimStatusEnum.COMPLETED.name()));
         stats.put("successClaims", successClaims);
         
         // 帮助他人数（我发布的帖子被成功认领）
         long helpOthers = claimMapper.selectCount(new LambdaQueryWrapper<BizClaim>()
                 .eq(BizClaim::getPosterId, userId)
-                .eq(BizClaim::getStatus, ClaimStatusEnum.APPROVED.name()));
+                .eq(BizClaim::getStatus, ClaimStatusEnum.COMPLETED.name()));
         stats.put("helpOthers", helpOthers);
         
         return stats;
@@ -323,12 +323,24 @@ public class StatisticsServiceImpl implements StatisticsService {
         Map<String, Object> stats = new HashMap<>();
         
         long totalClaims = claimMapper.selectCount(null);
+        long approvedClaims = claimMapper.selectCount(new LambdaQueryWrapper<BizClaim>()
+                .in(BizClaim::getStatus,
+                        ClaimStatusEnum.APPROVED.name(),
+                        ClaimStatusEnum.IN_HANDOVER.name(),
+                        ClaimStatusEnum.COMPLETED.name()));
         long successClaims = claimMapper.selectCount(new LambdaQueryWrapper<BizClaim>()
-                .eq(BizClaim::getStatus, ClaimStatusEnum.APPROVED.name()));
+                .eq(BizClaim::getStatus, ClaimStatusEnum.COMPLETED.name()));
         
+        double approvedRate = totalClaims > 0 ? (double) approvedClaims / totalClaims * 100 : 0;
+        double successRate = totalClaims > 0 ? (double) successClaims / totalClaims * 100 : 0;
+        double handoverCompletionRate = approvedClaims > 0 ? (double) successClaims / approvedClaims * 100 : 0;
+
         stats.put("totalClaims", totalClaims);
+        stats.put("approvedClaims", approvedClaims);
         stats.put("successClaims", successClaims);
-        stats.put("successRate", totalClaims > 0 ? (double) successClaims / totalClaims * 100 : 0);
+        stats.put("approvedRate", Math.round(approvedRate * 10) / 10.0);
+        stats.put("successRate", Math.round(successRate * 10) / 10.0);
+        stats.put("handoverCompletionRate", Math.round(handoverCompletionRate * 10) / 10.0);
         
         return stats;
     }
@@ -336,20 +348,22 @@ public class StatisticsServiceImpl implements StatisticsService {
     @Override
     public Map<String, Object> getOverviewStats(String startDate, String endDate, String type) {
         Map<String, Object> stats = new HashMap<>();
+        LocalDateTime startDateTime = startDate != null && !startDate.isEmpty()
+                ? LocalDate.parse(startDate).atStartOfDay() : null;
+        LocalDateTime endDateTime = endDate != null && !endDate.isEmpty()
+                ? LocalDate.parse(endDate).atTime(LocalTime.MAX) : null;
         
         LambdaQueryWrapper<BizPost> postQuery = new LambdaQueryWrapper<>();
         LambdaQueryWrapper<BizClaim> claimQuery = new LambdaQueryWrapper<>();
         
         // 时间范围过滤
-        if (startDate != null && !startDate.isEmpty()) {
-            LocalDateTime start = LocalDate.parse(startDate).atStartOfDay();
-            postQuery.ge(BizPost::getCreateTime, start);
-            claimQuery.ge(BizClaim::getCreateTime, start);
+        if (startDateTime != null) {
+            postQuery.ge(BizPost::getCreateTime, startDateTime);
+            claimQuery.ge(BizClaim::getCreateTime, startDateTime);
         }
-        if (endDate != null && !endDate.isEmpty()) {
-            LocalDateTime end = LocalDate.parse(endDate).atTime(LocalTime.MAX);
-            postQuery.le(BizPost::getCreateTime, end);
-            claimQuery.le(BizClaim::getCreateTime, end);
+        if (endDateTime != null) {
+            postQuery.le(BizPost::getCreateTime, endDateTime);
+            claimQuery.le(BizClaim::getCreateTime, endDateTime);
         }
         
         // 总帖子数
@@ -359,40 +373,47 @@ public class StatisticsServiceImpl implements StatisticsService {
         // 寻物启事数
         long lostPosts = postMapper.selectCount(new LambdaQueryWrapper<BizPost>()
                 .eq(BizPost::getPostType, PostTypeEnum.LOST.name())
-                .ge(startDate != null && !startDate.isEmpty(), BizPost::getCreateTime, 
-                    startDate != null ? LocalDate.parse(startDate).atStartOfDay() : null)
-                .le(endDate != null && !endDate.isEmpty(), BizPost::getCreateTime,
-                    endDate != null ? LocalDate.parse(endDate).atTime(LocalTime.MAX) : null));
+                .ge(startDateTime != null, BizPost::getCreateTime, startDateTime)
+                .le(endDateTime != null, BizPost::getCreateTime, endDateTime));
         stats.put("lostPosts", lostPosts);
         
         // 招领信息数
         long foundPosts = postMapper.selectCount(new LambdaQueryWrapper<BizPost>()
                 .eq(BizPost::getPostType, PostTypeEnum.FOUND.name())
-                .ge(startDate != null && !startDate.isEmpty(), BizPost::getCreateTime,
-                    startDate != null ? LocalDate.parse(startDate).atStartOfDay() : null)
-                .le(endDate != null && !endDate.isEmpty(), BizPost::getCreateTime,
-                    endDate != null ? LocalDate.parse(endDate).atTime(LocalTime.MAX) : null));
+                .ge(startDateTime != null, BizPost::getCreateTime, startDateTime)
+                .le(endDateTime != null, BizPost::getCreateTime, endDateTime));
         stats.put("foundPosts", foundPosts);
         
-        // 成功找回数
-        long recoveredCount = claimMapper.selectCount(new LambdaQueryWrapper<BizClaim>()
-                .eq(BizClaim::getStatus, ClaimStatusEnum.APPROVED.name())
-                .ge(startDate != null && !startDate.isEmpty(), BizClaim::getCreateTime,
-                    startDate != null ? LocalDate.parse(startDate).atStartOfDay() : null)
-                .le(endDate != null && !endDate.isEmpty(), BizClaim::getCreateTime,
-                    endDate != null ? LocalDate.parse(endDate).atTime(LocalTime.MAX) : null));
-        stats.put("recoveredCount", recoveredCount);
+        // 审核通过数（包含后续已进入交接/已完成）
+        long approvedClaims = claimMapper.selectCount(new LambdaQueryWrapper<BizClaim>()
+                .in(BizClaim::getStatus,
+                        ClaimStatusEnum.APPROVED.name(),
+                        ClaimStatusEnum.IN_HANDOVER.name(),
+                        ClaimStatusEnum.COMPLETED.name())
+                .ge(startDateTime != null, BizClaim::getCreateTime, startDateTime)
+                .le(endDateTime != null, BizClaim::getCreateTime, endDateTime));
+        stats.put("approvedClaims", approvedClaims);
+
+        // 交接完成数（兼容历史字段 recoveredCount）
+        long completedClaims = claimMapper.selectCount(new LambdaQueryWrapper<BizClaim>()
+                .eq(BizClaim::getStatus, ClaimStatusEnum.COMPLETED.name())
+                .ge(startDateTime != null, BizClaim::getCreateTime, startDateTime)
+                .le(endDateTime != null, BizClaim::getCreateTime, endDateTime));
+        stats.put("completedClaims", completedClaims);
+        stats.put("recoveredCount", completedClaims);
         
         // 找回率
-        double recoveryRate = totalPosts > 0 ? (double) recoveredCount / totalPosts * 100 : 0;
+        double recoveryRate = totalPosts > 0 ? (double) completedClaims / totalPosts * 100 : 0;
         stats.put("recoveryRate", Math.round(recoveryRate * 10) / 10.0);
         
+        // 双层口径：审核通过率 + 交接完成率
+        long totalClaims = claimMapper.selectCount(claimQuery);
+        double approvedRate = totalClaims > 0 ? (double) approvedClaims / totalClaims * 100 : 0;
+        double handoverCompletionRate = approvedClaims > 0 ? (double) completedClaims / approvedClaims * 100 : 0;
+        stats.put("approvedRate", Math.round(approvedRate * 10) / 10.0);
+        stats.put("handoverCompletionRate", Math.round(handoverCompletionRate * 10) / 10.0);
+
         // 活跃用户数（在时间范围内发帖或认领的用户）
-        LocalDateTime startDateTime = startDate != null && !startDate.isEmpty() 
-                ? LocalDate.parse(startDate).atStartOfDay() : null;
-        LocalDateTime endDateTime = endDate != null && !endDate.isEmpty() 
-                ? LocalDate.parse(endDate).atTime(LocalTime.MAX) : null;
-        
         Set<Long> activeUserIds = new HashSet<>();
         // 统计发帖用户
         LambdaQueryWrapper<BizPost> postUserQuery = new LambdaQueryWrapper<BizPost>()
@@ -417,7 +438,6 @@ public class StatisticsServiceImpl implements StatisticsService {
         stats.put("activeUsers", activeUserIds.size());
         
         // 总认领数
-        long totalClaims = claimMapper.selectCount(claimQuery);
         stats.put("totalClaims", totalClaims);
         
         // 发放积分（统计时间范围内增加的积分总数）
@@ -469,7 +489,7 @@ public class StatisticsServiceImpl implements StatisticsService {
                     .le(BizPost::getCreateTime, dayEnd));
             
             long recoveredCount = claimMapper.selectCount(new LambdaQueryWrapper<BizClaim>()
-                    .eq(BizClaim::getStatus, ClaimStatusEnum.APPROVED.name())
+                    .eq(BizClaim::getStatus, ClaimStatusEnum.COMPLETED.name())
                     .ge(BizClaim::getCreateTime, dayStart)
                     .le(BizClaim::getCreateTime, dayEnd));
             
@@ -534,7 +554,7 @@ public class StatisticsServiceImpl implements StatisticsService {
             if (!postIds.isEmpty()) {
                 recoveredCount = claimMapper.selectCount(new LambdaQueryWrapper<BizClaim>()
                         .in(BizClaim::getPostId, postIds)
-                        .eq(BizClaim::getStatus, ClaimStatusEnum.APPROVED.name()));
+                        .eq(BizClaim::getStatus, ClaimStatusEnum.COMPLETED.name()));
             }
             
             // 计算找回率
@@ -603,7 +623,7 @@ public class StatisticsServiceImpl implements StatisticsService {
             if (!postIds.isEmpty()) {
                 recoveredCount = claimMapper.selectCount(new LambdaQueryWrapper<BizClaim>()
                         .in(BizClaim::getPostId, postIds)
-                        .eq(BizClaim::getStatus, ClaimStatusEnum.APPROVED.name()));
+                        .eq(BizClaim::getStatus, ClaimStatusEnum.COMPLETED.name()));
             }
             
             Map<String, Object> item = new HashMap<>();
@@ -648,3 +668,4 @@ public class StatisticsServiceImpl implements StatisticsService {
         return exportData;
     }
 }
+

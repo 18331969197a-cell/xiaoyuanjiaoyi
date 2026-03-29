@@ -1,6 +1,7 @@
 import type { PageResult } from '@vben/types';
 
 import { requestClient } from '#/api/request';
+import { normalizePageResult } from '#/api/utils/page';
 
 // 通知类型枚举
 export const NotificationType = {
@@ -35,6 +36,8 @@ export const NotificationTypeConfig: Record<
   POST: { label: '帖子通知', color: 'lime', icon: 'mdi:post' },
 };
 
+const DEFAULT_NOTIFICATION_TYPE_CONFIG = NotificationTypeConfig.SYSTEM!;
+
 // 通知类型
 export interface BizNotification {
   id?: number;
@@ -60,9 +63,13 @@ export interface NotificationItem extends BizNotification {
 /**
  * 获取通知类型配置
  */
-export function getNotificationTypeConfig(type?: string) {
-  if (!type) return NotificationTypeConfig.SYSTEM;
-  return NotificationTypeConfig[type] || NotificationTypeConfig.SYSTEM;
+export function getNotificationTypeConfig(
+  type?: string,
+): { color: string; icon: string; label: string } {
+  if (!type) {
+    return DEFAULT_NOTIFICATION_TYPE_CONFIG;
+  }
+  return NotificationTypeConfig[type] ?? DEFAULT_NOTIFICATION_TYPE_CONFIG;
 }
 
 /**
@@ -96,7 +103,7 @@ export function getNotificationRoute(
       return '/lostfound/notifications';
     }
     case 'CLAIM': {
-      return '/lostfound/me/claims';
+      return relatedId ? `/lostfound/claims/${relatedId}` : '/lostfound/me/claims';
     }
     case 'COMMENT': {
       return relatedId
@@ -133,10 +140,11 @@ async function getNotificationList(params?: {
   pageSize?: number;
   type?: string;
 }) {
-  return requestClient.get<PageResult<BizNotification>>(
+  const res = await requestClient.get<PageResult<BizNotification>>(
     '/lostfound/notification/list',
     { params },
   );
+  return normalizePageResult(res, params);
 }
 
 /**

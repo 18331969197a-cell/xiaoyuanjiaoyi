@@ -30,7 +30,7 @@ export const useLostfoundStore = defineStore('lostfound', () => {
   async function fetchUserPoints() {
     try {
       const res = await getUserPoints();
-      userPoints.value = res?.totalPoints || 0;
+      userPoints.value = res?.points || 0;
     } catch (error) {
       console.error('获取用户积分失败:', error);
     }

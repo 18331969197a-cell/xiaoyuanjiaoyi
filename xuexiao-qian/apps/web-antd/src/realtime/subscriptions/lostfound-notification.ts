@@ -3,6 +3,7 @@ import type { createWebSocketService } from '@vben/websocket';
 import { notification } from 'ant-design-vue';
 
 import { useLostfoundStore } from '#/store/lostfound';
+import { router } from '#/router';
 
 /**
  * 失物招领通知消息类型
@@ -31,9 +32,9 @@ export function registerLostfoundNotificationSubscription(
   service: ReturnType<typeof createWebSocketService>,
 ) {
   // 订阅新通知
-  const notificationUnsubscribe = service.subscribe<LostfoundNotification>(
-    '/user/queue/lostfound/notification',
-    (data) => {
+  service.subscribe('/user/queue/lostfound/notification', (payload: any) => {
+      const data: LostfoundNotification =
+        typeof payload === 'string' ? JSON.parse(payload) : payload;
       console.log('[LostFound] 收到新通知:', data);
 
       // 显示通知弹窗
@@ -53,25 +54,23 @@ export function registerLostfoundNotificationSubscription(
       // 更新store中的未读数量
       const store = useLostfoundStore();
       store.incrementUnreadNotifications();
-    },
-  );
+    });
 
   // 订阅未读数量更新
-  const countUnsubscribe = service.subscribe<NotificationCount>(
-    '/user/queue/lostfound/notification/count',
-    (data) => {
+  service.subscribe('/user/queue/lostfound/notification/count', (payload: any) => {
+      const data: NotificationCount =
+        typeof payload === 'string' ? JSON.parse(payload) : payload;
       console.log('[LostFound] 未读通知数量更新:', data.unreadCount);
 
       // 更新store中的未读数量
       const store = useLostfoundStore();
       store.setUnreadNotifications(data.unreadCount);
-    },
-  );
+    });
 
   // 返回清理函数
   return () => {
-    notificationUnsubscribe();
-    countUnsubscribe();
+    service.unsubscribe('/user/queue/lostfound/notification');
+    service.unsubscribe('/user/queue/lostfound/notification/count');
   };
 }
 
@@ -79,9 +78,6 @@ export function registerLostfoundNotificationSubscription(
  * 处理通知点击
  */
 function handleNotificationClick(relatedType: string, relatedId: number) {
-  const router = window.__APP_ROUTER__;
-  if (!router) return;
-
   switch (relatedType) {
     case 'CLAIM': {
       router.push(`/lostfound/me/claims`);
@@ -100,7 +96,7 @@ function handleNotificationClick(relatedType: string, relatedId: number) {
       break;
     }
     default: {
-      router.push('/lostfound/me/notifications');
+      router.push('/lostfound/notifications');
     }
   }
 }

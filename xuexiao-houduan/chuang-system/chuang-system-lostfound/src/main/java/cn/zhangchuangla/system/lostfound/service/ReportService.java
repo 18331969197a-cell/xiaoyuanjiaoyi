@@ -2,6 +2,7 @@ package cn.zhangchuangla.system.lostfound.service;
 
 import cn.zhangchuangla.system.lostfound.model.entity.BizReport;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import java.time.LocalDateTime;
 
 /**
  * 举报服务接口
@@ -63,7 +64,8 @@ public interface ReportService {
      * @param status     状态
      * @return 举报列表
      */
-    Page<BizReport> listReports(Page<BizReport> page, String targetType, String status, String resolveAction);
+    Page<BizReport> listReports(Page<BizReport> page, String targetType, Long targetId, String status, String resolveAction,
+                                LocalDateTime startTime, LocalDateTime endTime);
 
     /**
      * 获取举报列表（按状态）

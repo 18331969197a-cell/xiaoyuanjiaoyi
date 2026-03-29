@@ -17,6 +17,16 @@
         <result property="confirmedByFromAt" column="confirmed_by_from_at"/>
         <result property="confirmedByToAt" column="confirmed_by_to_at"/>
         <result property="remark" column="remark"/>
+        <result property="receiptSubmittedBy" column="receipt_submitted_by"/>
+        <result property="receiptSubmittedAt" column="receipt_submitted_at"/>
+        <result property="receiptActualTime" column="receipt_actual_time"/>
+        <result property="receiptLocation" column="receipt_location"/>
+        <result property="receiptEvidenceJson"
+                column="receipt_evidence_json"
+                typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result property="receiptRemark" column="receipt_remark"/>
+        <result property="receiptConfirmedBy" column="receipt_confirmed_by"/>
+        <result property="receiptConfirmedAt" column="receipt_confirmed_at"/>
         <result property="createTime" column="create_time"/>
         <result property="updateTime" column="update_time"/>
         <result property="fromUserName" column="from_user_name"/>
@@ -32,6 +42,21 @@
         LEFT JOIN sys_user u1 ON h.from_user_id = u1.user_id
         LEFT JOIN sys_user u2 ON h.to_user_id = u2.user_id
         WHERE h.claim_id = #{claimId}
+    </select>
+
+    <!-- 查询用户相关交接列表（带用户名） -->
+    <select id="selectUserHandoversWithDetail" resultMap="HandoverResultMap">
+        SELECT h.*,
+               u1.username AS from_user_name,
+               u2.username AS to_user_name
+        FROM biz_handover h
+        LEFT JOIN sys_user u1 ON h.from_user_id = u1.user_id
+        LEFT JOIN sys_user u2 ON h.to_user_id = u2.user_id
+        WHERE (h.from_user_id = #{userId} OR h.to_user_id = #{userId})
+        <if test="status != null and status != ''">
+            AND h.status = #{status}
+        </if>
+        ORDER BY h.create_time DESC
     </select>
 
 </mapper>

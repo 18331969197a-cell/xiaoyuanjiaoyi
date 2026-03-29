@@ -1,6 +1,7 @@
 import type { PageResult } from '@vben/types';
 
 import { requestClient } from '#/api/request';
+import { normalizePageResult } from '#/api/utils/page';
 
 // 礼品分类类型
 export interface GiftCategory {
@@ -78,10 +79,7 @@ async function getGiftList(params?: {
   const res = await requestClient.get<PageResult<Gift>>('/lostfound/gifts', {
     params,
   });
-  return {
-    rows: (res as any).records || res.rows || [],
-    total: res.total || 0,
-  };
+  return normalizePageResult(res, params);
 }
 
 /**
@@ -117,10 +115,7 @@ async function getMyExchangeOrders(params?: {
     '/lostfound/exchange/my',
     { params },
   );
-  return {
-    rows: (res as any).records || res.rows || [],
-    total: res.total || 0,
-  };
+  return normalizePageResult(res, params);
 }
 
 /**
@@ -146,5 +141,3 @@ export {
   getGiftList,
   getMyExchangeOrders,
 };
-
-export type { ExchangeOrder, ExchangeParams, Gift, GiftCategory };

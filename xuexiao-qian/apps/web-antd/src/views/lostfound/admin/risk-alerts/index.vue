@@ -1,45 +1,27 @@
 <script lang="ts" setup>
 import type { VxeTableGridOptions } from '#/adapter/vxe-table';
 
+import { onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+
 import { Page } from '@vben/common-ui';
 
 import { Button } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { adminGetSecurityLogList } from '#/api/system/securityLog';
+import { adminGetRiskEventList } from '#/api/lostfound/riskEvent';
 
 import { useColumns, useGridFormSchema } from './data';
 
-function inferAutoAction(title?: string) {
-  const text = (title || '').toLowerCase();
-  if (
-    text.includes('钓鱼') ||
-    text.includes('恶意') ||
-    text.includes('欺诈') ||
-    text.includes('木马') ||
-    text.includes('病毒') ||
-    text.includes('盗号') ||
-    text.includes('封禁')
-  ) {
-    return 'BAN';
-  }
-  if (
-    text.includes('频繁') ||
-    text.includes('多次') ||
-    text.includes('异常登录') ||
-    text.includes('爆破') ||
-    text.includes('撞库')
-  ) {
-    return 'RATE_LIMIT';
-  }
-  return 'WATCH';
-}
+const route = useRoute();
+
+const baseFilters = {};
 
 const [Grid, gridApi] = useVbenVxeGrid({
   formOptions: {
     fieldMappingTime: [
-      ['operationTime', ['startTime', 'endTime'], 'YYYY-MM-DD HH:mm:ss'],
+      ['createTime', ['startTime', 'endTime'], 'YYYY-MM-DD HH:mm:ss'],
     ],
     schema: useGridFormSchema(),
     submitOnChange: true,
@@ -54,19 +36,13 @@ const [Grid, gridApi] = useVbenVxeGrid({
     proxyConfig: {
       ajax: {
         query: async ({ page }, formValues) => {
-          const res = await adminGetSecurityLogList({
+          const res = await adminGetRiskEventList({
             pageNum: page?.currentPage,
             pageSize: page?.pageSize,
-            operationType: 'RISK_ALERT',
+            ...baseFilters,
             ...formValues,
           });
-          return {
-            rows: (res.rows || []).map((row: any) => ({
-              ...row,
-              autoAction: inferAutoAction(row.title),
-            })),
-            total: res.total || 0,
-          };
+          return res;
         },
       },
     },
@@ -85,22 +61,60 @@ const [Grid, gridApi] = useVbenVxeGrid({
 
 function showAll() {
   gridApi.formApi?.resetForm();
+  gridApi.formApi?.setValues({
+    ...baseFilters,
+  });
+  gridApi.query();
+}
+
+function showUserRisk() {
+  gridApi.formApi?.setValues({
+    ...baseFilters,
+    targetType: 'USER',
+    actionType: undefined,
+    eventStatus: undefined,
+    createTime: undefined,
+  });
+  gridApi.query();
+}
+
+function showContentRisk() {
+  gridApi.formApi?.setValues({
+    ...baseFilters,
+    targetType: 'POST',
+    actionType: undefined,
+    eventStatus: undefined,
+    createTime: undefined,
+  });
   gridApi.query();
 }
 
 function showToday() {
   gridApi.formApi?.setValues({
-    operationTime: [dayjs().startOf('day'), dayjs().endOf('day')],
+    ...baseFilters,
+    createTime: [dayjs().startOf('day'), dayjs().endOf('day')],
   });
   gridApi.query();
 }
+
+onMounted(() => {
+  if (route.query.preset === 'today') {
+    showToday();
+    return;
+  }
+  showAll();
+});
 </script>
 
 <template>
   <Page auto-content-height>
     <Grid table-title="风险告警">
       <template #toolbar-tools>
-        <Button @click="showAll">全部告警</Button>
+        <Button @click="showAll">全部风险</Button>
+        <span class="mx-1"></span>
+        <Button @click="showUserRisk">账号风险</Button>
+        <span class="mx-1"></span>
+        <Button @click="showContentRisk">内容风险</Button>
         <span class="mx-1"></span>
         <Button type="primary" @click="showToday">今日告警</Button>
       </template>

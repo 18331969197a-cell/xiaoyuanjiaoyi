@@ -25,8 +25,11 @@ export interface ReportQueryParams {
   pageNum?: number;
   pageSize?: number;
   targetType?: string;
+  targetId?: number;
   status?: string;
   resolveAction?: string;
+  startTime?: string;
+  endTime?: string;
 }
 
 /**
@@ -37,7 +40,7 @@ async function createReport(data: BizReport) {
 }
 
 // MyBatis-Plus 分页结果类型
-export interface MybatisPlusPage<T> {
+interface ReportMybatisPlusPage<T> {
   records: T[];
   total: number;
   size: number;
@@ -49,9 +52,12 @@ export interface MybatisPlusPage<T> {
  * 获取我的举报
  */
 async function getMyReports(params?: { pageNum?: number; pageSize?: number }) {
-  return requestClient.get<MybatisPlusPage<BizReport>>('/lostfound/report/my', {
-    params,
-  });
+  return requestClient.get<ReportMybatisPlusPage<BizReport>>(
+    '/lostfound/report/my',
+    {
+      params,
+    },
+  );
 }
 
 // ========== 管理端接口 ==========
@@ -60,7 +66,7 @@ async function getMyReports(params?: { pageNum?: number; pageSize?: number }) {
  * 获取举报列表
  */
 async function adminGetReportList(params?: ReportQueryParams) {
-  const result = await requestClient.get<MybatisPlusPage<BizReport>>(
+  const result = await requestClient.get<ReportMybatisPlusPage<BizReport>>(
     '/lostfound/report/admin/list',
     { params },
   );

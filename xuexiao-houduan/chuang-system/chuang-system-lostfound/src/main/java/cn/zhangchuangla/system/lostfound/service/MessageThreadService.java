@@ -83,4 +83,13 @@ public interface MessageThreadService {
      * @return 会话信息
      */
     BizMsgThread getThreadDetail(Long threadId, Long userId);
+
+    /**
+     * 获取会话对方用户ID（含权限校验）
+     *
+     * @param threadId 会话ID
+     * @param userId   当前用户ID
+     * @return 对方用户ID
+     */
+    Long getCounterpartyUserId(Long threadId, Long userId);
 }

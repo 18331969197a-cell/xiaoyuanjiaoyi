@@ -3,7 +3,7 @@ import type { UploadFile } from 'ant-design-vue';
 
 import type { BizPost } from '#/api/lostfound/post';
 
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { Page } from '@vben/common-ui';
@@ -24,7 +24,7 @@ import {
 
 import { createClaim } from '#/api/lostfound/claim';
 import { getPostById } from '#/api/lostfound/post';
-import { parseImages } from '#/utils/lostfound';
+import { canInitiateClaim, parseImages } from '#/utils/lostfound';
 
 // 扩展帖子详情类型
 interface PostDetail extends BizPost {
@@ -52,10 +52,18 @@ const featureAnswersInput = ref('');
 
 const fileList = ref<UploadFile[]>([]);
 
+const postTypeLabel = computed(() =>
+  post.value?.type === 'lost' ? '寻物启事' : '招领信息',
+);
+
+const postTypeTagColor = computed(() =>
+  post.value?.type === 'lost' ? 'red' : 'green',
+);
+
 // 表单规则
 const rules = {
   description: [
-    { required: true, message: '请描述您的认领理由' },
+    { required: true, message: '请填写申请说明' },
     { min: 20, message: '描述至少20个字符' },
   ],
 };
@@ -85,11 +93,7 @@ async function loadPost() {
       eventTime: data.occurTime || data.lostTime || data.foundTime,
       status: data.status?.toLowerCase() || 'pending',
     } as PostDetail;
-    if (post.value.type !== 'found') {
-      message.error('只能认领招领信息');
-      router.back();
-    }
-    if (post.value.status !== 'approved' && post.value.status !== 'published') {
+    if (!canInitiateClaim(post.value.status)) {
       message.error('该帖子暂不可认领');
       router.back();
     }
@@ -171,17 +175,21 @@ onMounted(() => {
           </div>
           <div class="flex-1">
             <div class="mb-2 flex items-center gap-2">
-              <Tag color="green">招领信息</Tag>
+              <Tag :color="postTypeTagColor">{{ postTypeLabel }}</Tag>
               <span class="text-lg font-medium">{{ post.itemName }}</span>
             </div>
             <Descriptions :column="1" size="small">
               <DescriptionsItem label="分类">
                 {{ post.categoryName || '-' }}
               </DescriptionsItem>
-              <DescriptionsItem label="拾取地点">
+              <DescriptionsItem
+                :label="post.type === 'lost' ? '丢失地点' : '拾取地点'"
+              >
                 {{ post.locationName || '-' }}
               </DescriptionsItem>
-              <DescriptionsItem label="拾取时间">
+              <DescriptionsItem
+                :label="post.type === 'lost' ? '丢失时间' : '拾取时间'"
+              >
                 {{ formatTime(post.eventTime) || '-' }}
               </DescriptionsItem>
               <DescriptionsItem label="描述">
@@ -195,10 +203,14 @@ onMounted(() => {
       <!-- 认领表单 -->
       <Card title="填写认领信息">
         <Form ref="formRef" :model="formData" :rules="rules" layout="vertical">
-          <FormItem label="认领说明" name="description">
+          <FormItem label="申请说明" name="description">
             <Input.TextArea
               v-model:value="formData.description"
-              placeholder="请详细描述您为什么认为这是您的物品，包括物品的特征、丢失时间地点等信息，以便发布者核实"
+              :placeholder="
+                post?.type === 'lost'
+                  ? '请描述您拾获该物品的时间、地点和可核验特征，便于失主确认'
+                  : '请详细描述您为什么认为这是您的物品，包括物品特征、丢失时间地点等信息，便于发布者核实'
+              "
               :rows="5"
               :maxlength="1000"
               show-count

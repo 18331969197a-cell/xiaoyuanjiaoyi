@@ -273,10 +273,18 @@ CREATE TABLE `biz_handover`  (
   `to_user_id` bigint NOT NULL COMMENT '接收方用户ID',
   `location` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '交接地点',
   `handover_time` datetime NULL DEFAULT NULL COMMENT '约定交接时间',
-  `status` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT 'PENDING' COMMENT '状态：PENDING-待确认，CONFIRMED-已确认',
+  `status` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT 'PENDING' COMMENT '状态：PENDING/RESCHEDULED/NO_SHOW/DISPUTED/CONFIRMED/CANCELLED',
   `confirmed_by_from_at` datetime NULL DEFAULT NULL COMMENT '交出方确认时间',
   `confirmed_by_to_at` datetime NULL DEFAULT NULL COMMENT '接收方确认时间',
   `remark` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '备注',
+  `receipt_submitted_by` bigint NULL DEFAULT NULL COMMENT '线下回传提交人',
+  `receipt_submitted_at` datetime NULL DEFAULT NULL COMMENT '线下回传提交时间',
+  `receipt_actual_time` datetime NULL DEFAULT NULL COMMENT '线下实际完成时间',
+  `receipt_location` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '线下实际地点',
+  `receipt_evidence_json` json NULL COMMENT '线下回传凭证',
+  `receipt_remark` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '线下回传备注',
+  `receipt_confirmed_by` bigint NULL DEFAULT NULL COMMENT '线下回传确认人',
+  `receipt_confirmed_at` datetime NULL DEFAULT NULL COMMENT '线下回传确认时间',
   `create_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE,
@@ -288,7 +296,7 @@ CREATE TABLE `biz_handover`  (
 -- ----------------------------
 -- Records of biz_handover
 -- ----------------------------
-INSERT INTO `biz_handover` VALUES (1, 1, 8, 9, '图书馆一楼大厅', '2025-12-29 15:00:00', 'CONFIRMED', '2025-12-28 17:33:11', '2025-12-28 17:35:04', NULL, '2025-12-28 17:31:01', '2025-12-28 22:31:37');
+INSERT INTO `biz_handover` VALUES (1, 1, 8, 9, '图书馆一楼大厅', '2025-12-29 15:00:00', 'CONFIRMED', '2025-12-28 17:33:11', '2025-12-28 17:35:04', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-28 17:31:01', '2025-12-28 22:31:37');
 
 -- ----------------------------
 -- Table structure for biz_location
@@ -567,6 +575,35 @@ CREATE TABLE `biz_report`  (
 -- ----------------------------
 INSERT INTO `biz_report` VALUES (1, 9, 'POST', 10, 'OTHER', '测试举报功能 - 这是一个测试举报，请忽略', NULL, 'RESOLVED', 2, '2025-12-29 13:11:26', 'MCP测试处理功能-验证数据库更新', 'warning', '2025-12-28 18:14:16', '2025-12-28 18:14:16');
 INSERT INTO `biz_report` VALUES (2, 9, 'POST', 7, 'OTHER', 'MCP测试举报功能-验证数据库写入', NULL, 'REJECTED', 2, '2025-12-29 13:01:16', '1', NULL, '2025-12-28 22:44:34', '2025-12-28 22:44:33');
+
+-- ----------------------------
+-- Table structure for biz_risk_event
+-- ----------------------------
+DROP TABLE IF EXISTS `biz_risk_event`;
+CREATE TABLE `biz_risk_event`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '风险事件ID',
+  `source_type` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '来源类型：REPORT/HANDOVER',
+  `source_id` bigint NOT NULL COMMENT '来源记录ID',
+  `report_id` bigint NULL DEFAULT NULL COMMENT '关联举报ID',
+  `target_type` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '目标类型',
+  `target_id` bigint NULL DEFAULT NULL COMMENT '目标ID',
+  `risk_type` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '风险类型',
+  `action_type` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '处置动作',
+  `event_status` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'OPEN' COMMENT '事件状态：OPEN/RESOLVED',
+  `scope_type` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT 'GLOBAL' COMMENT '权限范围类型：GLOBAL/DEPT',
+  `scope_id` bigint NULL DEFAULT NULL COMMENT '权限范围ID',
+  `remark` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '备注',
+  `resolved_by` bigint NULL DEFAULT NULL COMMENT '处理人',
+  `resolved_at` datetime NULL DEFAULT NULL COMMENT '处理时间',
+  `create_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_source`(`source_type` ASC, `source_id` ASC) USING BTREE,
+  INDEX `idx_target`(`target_type` ASC, `target_id` ASC) USING BTREE,
+  INDEX `idx_event_status`(`event_status` ASC) USING BTREE,
+  INDEX `idx_action_type`(`action_type` ASC) USING BTREE,
+  INDEX `idx_create_time`(`create_time` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '风险事件表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for biz_student_roster
@@ -1522,9 +1559,9 @@ INSERT INTO `sys_menu` VALUES (15, 'StorageFile', '存储文件', '/system/stora
 INSERT INTO `sys_menu` VALUES (16, 'LoginLog', '登录日志', '/system/log/login', 'menu', 0, 12, NULL, NULL, 'carbon:login', '/system/log/login/index', NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, NULL, 1, '2025-08-07 08:32:15', '2025-08-07 08:32:15', 'system_init', NULL, NULL);
 INSERT INTO `sys_menu` VALUES (17, 'OperationLog', '操作日志', '/system/log/operation', 'menu', 0, 12, NULL, NULL, 'carbon:operations-field', 'system/log/operation/index', NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, NULL, 2, '2025-08-07 08:32:15', '2025-08-07 08:32:15', 'system_init', NULL, NULL);
 INSERT INTO `sys_menu` VALUES (18, 'SystemMetrics', '系统指标', '/monitor/metrics', 'menu', 0, 2, NULL, NULL, 'carbon:business-metrics', '/monitor/metrics/index', NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, NULL, 1, '2025-08-07 08:32:15', '2025-08-07 08:32:15', 'system_init', NULL, NULL);
-INSERT INTO `sys_menu` VALUES (19, 'SqlMonitor', '数据监控', '/monitor/database', 'embedded', 0, 2, '', '', 'carbon:db2-database', 'IFrameView', '', '', '', '', 1, 0, 0, 0, 0, 0, 'https://echo.zhangchuangla.cn/api/druid/login.html', 2, '2025-08-07 08:32:15', '2025-08-07 08:32:15', 'system_init', 'admin', NULL);
+INSERT INTO `sys_menu` VALUES (19, 'SqlMonitor', '数据监控', '/monitor/database', 'embedded', 0, 2, '', '', 'carbon:db2-database', 'IFrameView', '', '', '', '', 1, 0, 0, 0, 0, 0, '/api/druid/login.html', 2, '2025-08-07 08:32:15', '2025-08-07 08:32:15', 'system_init', 'admin', NULL);
 INSERT INTO `sys_menu` VALUES (20, 'Job', '定时任务', '/tool/job', 'catalog', 0, 3, '', '', 'carbon:network-time-protocol', '', '', '', '', '', 0, 0, 0, 0, 0, 0, '', 0, '2025-08-07 08:32:15', '2025-08-07 08:32:15', 'system_init', 'zhangchuang', NULL);
-INSERT INTO `sys_menu` VALUES (21, 'OpenApi', '接口文档', '/tool/openapi', 'embedded', 0, 3, '', '', 'carbon:api-1', 'IFrameView', '', '', '', '', 1, 0, 0, 0, 0, 0, 'https://echo.zhangchuangla.cn/api/swagger-ui/index.html', 2, '2025-08-07 08:32:15', '2025-08-07 08:32:15', 'system_init', 'admin', NULL);
+INSERT INTO `sys_menu` VALUES (21, 'OpenApi', '接口文档', '/tool/openapi', 'embedded', 0, 3, '', '', 'carbon:api-1', 'IFrameView', '', '', '', '', 1, 0, 0, 0, 0, 0, '/api/swagger-ui/index.html', 2, '2025-08-07 08:32:15', '2025-08-07 08:32:15', 'system_init', 'admin', NULL);
 INSERT INTO `sys_menu` VALUES (22, 'JobManage', '任务管理', '/tool/job/manage', 'menu', 0, 20, NULL, NULL, 'material-symbols:manage-history', '/tool/job/manage/index', NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, NULL, 1, '2025-08-07 08:32:15', '2025-08-07 08:32:15', 'system_init', NULL, NULL);
 INSERT INTO `sys_menu` VALUES (23, 'JobLog', '任务日志', '/tool/job/log', 'menu', 0, 20, '', '', 'carbon:notebook-reference', '/tool/job/log/index', '', '', '', '', 0, 0, 0, 0, 0, 0, '', 0, '2025-08-07 08:32:15', '2025-08-07 08:32:15', 'system_init', 'zhangchuang', NULL);
 INSERT INTO `sys_menu` VALUES (24, 'DeviceManage', '设备管理', '/system/online/device', 'menu', 0, 13, NULL, NULL, 'carbon:devices', '/system/online/device/index', NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, NULL, 1, '2025-08-07 08:32:15', '2025-08-07 08:32:15', 'system_init', NULL, NULL);
@@ -1636,7 +1673,7 @@ INSERT INTO `sys_menu` VALUES (210, 'MessageExport', '消息导出', NULL, 'butt
 INSERT INTO `sys_menu` VALUES (211, 'PersonaCenter', '个人中心', '/personal', 'catalog', 0, 0, '', '', 'fluent:home-empty-28-regular', '', '', '', '', '', 0, 0, 0, 0, 0, 0, NULL, 1, '2025-08-16 13:51:01', '2025-08-16 13:51:01', 'admin', 'admin', NULL);
 INSERT INTO `sys_menu` VALUES (212, 'Profile', '个人资料', '/personal/profile', 'menu', 0, 211, '', '', 'fluent:slide-text-person-24-regular', '/personal/profile/index', '', '', '', '', 0, 0, 0, 0, 0, 0, NULL, 0, '2025-08-16 13:53:15', '2025-08-16 13:53:15', 'admin', NULL, NULL);
 INSERT INTO `sys_menu` VALUES (213, 'MyMessage', '我的消息', '/personal/message', 'menu', 0, 211, '', '', 'fluent:comment-24-regular', '/personal/message/index', '', '', '', '', 0, 0, 0, 0, 0, 0, NULL, 0, '2025-08-16 13:56:37', '2025-08-16 13:56:37', 'admin', 'admin', NULL);
-INSERT INTO `sys_menu` VALUES (214, 'updateProfile', '修改资料', NULL, 'button', 0, 212, NULL, NULL, NULL, NULL, 'personal:profile:updatee', NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, NULL, 0, '2025-08-16 14:08:40', '2025-08-16 14:08:40', 'admin', NULL, NULL);
+INSERT INTO `sys_menu` VALUES (214, 'updateProfile', '修改资料', NULL, 'button', 0, 212, NULL, NULL, NULL, NULL, 'personal:profile:update', NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, NULL, 0, '2025-08-16 14:08:40', '2025-08-16 14:08:40', 'admin', NULL, NULL);
 INSERT INTO `sys_menu` VALUES (215, 'UpdatePassword', '修改密码', NULL, 'button', 0, 212, NULL, NULL, NULL, NULL, 'personal:profile:password', NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, NULL, 0, '2025-08-16 14:09:15', '2025-08-16 14:09:15', 'admin', NULL, NULL);
 INSERT INTO `sys_menu` VALUES (216, 'ResetUserPassword', '重置密码', NULL, 'button', 0, 4, NULL, NULL, NULL, NULL, 'system:user:resetPassword', NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, NULL, 0, '2025-08-16 14:42:16', '2025-08-16 14:42:16', 'admin', NULL, NULL);
 INSERT INTO `sys_menu` VALUES (217, 'PersonalMessageDetail', '消息详情', '/personal/message/detail', 'menu', 0, 211, '/personal/message', 'fluent:comment-28-filled', 'fluent:comment-28-filled', '/personal/message/detail', '', '', '', '', 0, 0, 1, 0, 0, 0, NULL, 0, '2025-08-16 15:40:58', '2025-08-16 15:40:58', 'admin', NULL, NULL);
@@ -1723,6 +1760,7 @@ INSERT INTO `sys_menu` VALUES (328, 'LostFoundPostList', '帖子列表', '', 'bu
 INSERT INTO `sys_menu` VALUES (329, 'LostFoundCommentDelete', '删除评论', '', 'button', 0, 300, NULL, NULL, NULL, NULL, 'lostfound:comment:delete', NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, NULL, 2, '2025-12-30 13:28:38', '2025-12-30 13:28:38', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (330, 'LostFoundClaimComplete', '完成认领', '', 'button', 0, 299, NULL, NULL, NULL, NULL, 'lostfound:claim:complete', NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, NULL, 2, '2025-12-30 13:28:38', '2025-12-30 13:28:38', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (331, 'adjustPoints', '调整积分', NULL, 'button', 0, 305, NULL, NULL, NULL, NULL, 'lostfound:points:adjust', NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, NULL, 1, '2025-12-30 14:09:36', '2025-12-30 14:09:36', 'demo', NULL, NULL);
+INSERT INTO `sys_menu` VALUES (332, 'LostFoundRiskAlertList', '风险告警列表', '', 'button', 0, 301, NULL, NULL, NULL, NULL, 'lostfound:risk-alert:list', NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, NULL, 3, '2026-03-27 18:00:00', '2026-03-27 18:00:00', NULL, NULL, NULL);
 INSERT INTO `sys_menu` VALUES (341, 'GiftMall', '礼品商城', '/lostfound/gifts', 'menu', 0, 0, '', '', 'lucide:gift', '/lostfound/gifts/index', '', '', '', '', 0, 0, 0, 0, 0, 0, NULL, 1, '2025-12-30 17:38:50', '2025-12-30 17:38:50', NULL, 'demo', NULL);
 INSERT INTO `sys_menu` VALUES (342, 'MyExchange', '我的兑换', '/lostfound/me/exchange', 'menu', 0, 211, '', '', 'carbon:gradient', '/lostfound/me/exchange', '', '', '', '', 0, 0, 0, 0, 0, 0, NULL, 30, '2025-12-30 17:38:50', '2025-12-30 17:38:50', NULL, 'demo', NULL);
 INSERT INTO `sys_menu` VALUES (343, 'GiftManage', '礼品管理', '/lostfound/admin/gifts', 'menu', 0, 0, '', '', 'carbon:global-filters', '/lostfound/admin/gifts/index', '', '', '', '', 0, 0, 0, 0, 0, 0, NULL, 60, '2025-12-30 17:38:50', '2025-12-30 17:38:50', NULL, 'demo', NULL);

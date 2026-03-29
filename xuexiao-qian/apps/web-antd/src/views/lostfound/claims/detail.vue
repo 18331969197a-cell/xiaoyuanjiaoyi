@@ -38,9 +38,15 @@ import {
 } from '#/api/lostfound/claim';
 import { createEvaluation } from '#/api/lostfound/evaluation';
 import {
+  cancelHandover,
   confirmHandover,
+  confirmHandoverReceipt,
   createHandover,
+  disputeHandover,
   getHandoverByClaimId,
+  markHandoverNoShow,
+  rescheduleHandover,
+  submitHandoverReceipt,
 } from '#/api/lostfound/handover';
 import { getPostById } from '#/api/lostfound/post';
 import { parseImages } from '#/utils/lostfound';
@@ -91,6 +97,20 @@ const rejectReason = ref('');
 const handoverVisible = ref(false);
 const handoverLocation = ref('');
 const handoverTime = ref<dayjs.Dayjs | undefined>(undefined);
+const receiptVisible = ref(false);
+const receiptActualTime = ref<dayjs.Dayjs | undefined>(undefined);
+const receiptLocation = ref('');
+const receiptRemark = ref('');
+const receiptFileList = ref<any[]>([]);
+const receiptImages = ref<string[]>([]);
+const rescheduleVisible = ref(false);
+const rescheduleTime = ref<dayjs.Dayjs | undefined>(undefined);
+const rescheduleLocation = ref('');
+const rescheduleReason = ref('');
+const disputeVisible = ref(false);
+const disputeReason = ref('');
+const noShowVisible = ref(false);
+const noShowReason = ref('');
 const evaluateVisible = ref(false);
 const evaluateScore = ref(5);
 const evaluateContent = ref('');
@@ -143,12 +163,90 @@ const rewardStatusLabel: Record<string, string> = {
   NONE: '无悬赏',
 };
 
+const handoverStatusConfig: Record<string, { color: string; label: string }> = {
+  PENDING: { color: 'blue', label: '待确认' },
+  RESCHEDULED: { color: 'gold', label: '已改约' },
+  NO_SHOW: { color: 'orange', label: '爽约待处理' },
+  DISPUTED: { color: 'red', label: '争议处理中' },
+  CONFIRMED: { color: 'green', label: '已完成' },
+  CANCELLED: { color: 'default', label: '已取消' },
+};
+
 const canHandleReward = computed(() => {
   if (!isPublisher.value || claim.value?.status !== 'completed') return false;
   const rewardAmount = claim.value?.post?.rewardAmount || 0;
   if (rewardAmount <= 0) return false;
   const rewardStatus = (claim.value?.post?.rewardStatus || '').toUpperCase();
   return rewardStatus === 'HOLD';
+});
+
+const currentUserId = computed(() => String(userStore.userInfo?.userId || ''));
+
+const handoverStatus = computed(() => claim.value?.handover?.status || '');
+
+const isInHandoverPhase = computed(
+  () => claim.value?.status === 'handover' || claim.value?.status === 'in_handover',
+);
+
+const canDirectConfirmHandover = computed(() => {
+  if (!isInHandoverPhase.value || !claim.value?.handover) return false;
+  const handover = claim.value.handover;
+  if (!['PENDING', 'RESCHEDULED', 'NO_SHOW'].includes(handover.status || '')) {
+    return false;
+  }
+  if (isPublisher.value) {
+    return !handover.confirmedByFromAt;
+  }
+  if (isClaimer.value) {
+    return !handover.confirmedByToAt;
+  }
+  return false;
+});
+
+const canCancelHandoverAction = computed(() => {
+  if (!isInHandoverPhase.value || !claim.value?.handover) return false;
+  return !['CANCELLED', 'CONFIRMED'].includes(claim.value.handover.status || '');
+});
+
+const canSubmitReceipt = computed(() => {
+  if (!isInHandoverPhase.value || !claim.value?.handover) return false;
+  const handover = claim.value.handover;
+  if (!['PENDING', 'RESCHEDULED', 'NO_SHOW'].includes(handover.status || '')) {
+    return false;
+  }
+  const submitter = handover.receiptSubmittedBy
+    ? String(handover.receiptSubmittedBy)
+    : '';
+  return !submitter || submitter === currentUserId.value;
+});
+
+const canConfirmReceipt = computed(() => {
+  if (!isInHandoverPhase.value || !claim.value?.handover) return false;
+  const handover = claim.value.handover;
+  if (!['PENDING', 'RESCHEDULED', 'NO_SHOW'].includes(handover.status || '')) {
+    return false;
+  }
+  if (!handover.receiptSubmittedBy || handover.receiptConfirmedBy) return false;
+  return String(handover.receiptSubmittedBy) !== currentUserId.value;
+});
+
+const canReschedule = computed(() => {
+  if (!isInHandoverPhase.value || !claim.value?.handover) return false;
+  return !['CANCELLED', 'CONFIRMED', 'DISPUTED'].includes(
+    claim.value.handover.status || '',
+  );
+});
+
+const canRaiseDispute = computed(() => {
+  if (!isInHandoverPhase.value || !claim.value?.handover) return false;
+  return !['CANCELLED', 'CONFIRMED', 'DISPUTED'].includes(
+    claim.value.handover.status || '',
+  );
+});
+
+const canMarkNoShow = computed(() => {
+  if (!isInHandoverPhase.value || !claim.value?.handover) return false;
+  return !['CANCELLED', 'CONFIRMED'].includes(claim.value.handover.status || '');
 });
 
 function normalizeFeatureAnswers(value?: unknown): string[] {
@@ -171,6 +269,22 @@ function normalizeFeatureAnswers(value?: unknown): string[] {
   return [];
 }
 
+function normalizeEvidence(value?: unknown): string[] {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.filter(Boolean).map(String);
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(Boolean).map(String);
+      }
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 function formatScore(score?: number) {
   if (typeof score !== 'number') return '-';
   const fixed = Math.round(score);
@@ -189,6 +303,13 @@ function scoreColor(score?: number) {
 function handleAppendUploadChange(info: any) {
   appendFileList.value = info.fileList || [];
   appendImages.value = appendFileList.value
+    .filter((f) => f.status === 'done' && f.response?.url)
+    .map((f) => f.response.url);
+}
+
+function handleReceiptUploadChange(info: any) {
+  receiptFileList.value = info.fileList || [];
+  receiptImages.value = receiptFileList.value
     .filter((f) => f.status === 'done' && f.response?.url)
     .map((f) => f.response.url);
 }
@@ -270,9 +391,16 @@ async function loadClaim() {
     try {
       const handoverData = await getHandoverByClaimId(id);
       if (handoverData) {
+        handoverData.receiptEvidenceJson = normalizeEvidence(
+          handoverData.receiptEvidenceJson as any,
+        );
         claimData.handover = handoverData;
         // 如果有交接记录且状态还是approved，更新为handover状态
-        if (claimData.status === 'approved' && handoverData.status) {
+        if (
+          claimData.status === 'approved' &&
+          handoverData.status &&
+          handoverData.status !== 'CANCELLED'
+        ) {
           claimData.status = 'handover';
         }
       }
@@ -414,6 +542,164 @@ async function handleConfirmHandover() {
       }
     },
   });
+}
+
+// 取消交接
+async function handleCancelHandover() {
+  if (!claim.value?.handover?.id) return;
+  Modal.confirm({
+    title: '取消交接',
+    content: '确认取消当前交接安排吗？取消后可重新发起交接。',
+    async onOk() {
+      actionLoading.value = true;
+      try {
+        await cancelHandover(claim.value!.handover!.id!, '用户取消交接');
+        message.success('交接已取消');
+        loadClaim();
+      } catch {
+        message.error('操作失败');
+      } finally {
+        actionLoading.value = false;
+      }
+    },
+  });
+}
+
+function showReceiptModal() {
+  receiptVisible.value = true;
+  receiptActualTime.value = dayjs();
+  receiptLocation.value =
+    claim.value?.handover?.receiptLocation ||
+    claim.value?.handover?.location ||
+    '';
+  receiptRemark.value = claim.value?.handover?.receiptRemark || '';
+  receiptFileList.value = [];
+  receiptImages.value = [];
+}
+
+async function handleSubmitReceipt() {
+  if (!claim.value?.handover?.id) return;
+  if (!receiptActualTime.value || !receiptLocation.value.trim()) {
+    message.warning('请填写线下交接时间和地点');
+    return;
+  }
+  actionLoading.value = true;
+  try {
+    await submitHandoverReceipt(claim.value.handover.id, {
+      receiptActualTime: receiptActualTime.value.format('YYYY-MM-DD HH:mm:ss'),
+      receiptLocation: receiptLocation.value.trim(),
+      receiptRemark: receiptRemark.value.trim() || undefined,
+      receiptEvidenceJson: receiptImages.value,
+    });
+    message.success('线下回传已提交，等待对方确认');
+    receiptVisible.value = false;
+    loadClaim();
+  } catch {
+    message.error('提交失败');
+  } finally {
+    actionLoading.value = false;
+  }
+}
+
+async function handleConfirmReceipt() {
+  if (!claim.value?.handover?.id) return;
+  Modal.confirm({
+    title: '确认线下回传',
+    content: '确认对方提交的线下回传信息无误吗？',
+    async onOk() {
+      actionLoading.value = true;
+      try {
+        await confirmHandoverReceipt(claim.value!.handover!.id!);
+        message.success('已确认回传，交接将自动完成');
+        loadClaim();
+      } catch {
+        message.error('操作失败');
+      } finally {
+        actionLoading.value = false;
+      }
+    },
+  });
+}
+
+function showRescheduleModal() {
+  rescheduleVisible.value = true;
+  rescheduleLocation.value = claim.value?.handover?.location || '';
+  rescheduleTime.value = claim.value?.handover?.handoverTime
+    ? dayjs(claim.value.handover.handoverTime)
+    : undefined;
+  rescheduleReason.value = '';
+}
+
+async function handleReschedule() {
+  if (!claim.value?.handover?.id) return;
+  if (!rescheduleLocation.value.trim() && !rescheduleTime.value) {
+    message.warning('请至少提供新的时间或地点');
+    return;
+  }
+  actionLoading.value = true;
+  try {
+    await rescheduleHandover(
+      claim.value.handover.id,
+      {
+        location: rescheduleLocation.value.trim() || undefined,
+        handoverTime: rescheduleTime.value?.format('YYYY-MM-DD HH:mm:ss'),
+      },
+      rescheduleReason.value.trim() || undefined,
+    );
+    message.success('已发起改约');
+    rescheduleVisible.value = false;
+    loadClaim();
+  } catch {
+    message.error('改约失败');
+  } finally {
+    actionLoading.value = false;
+  }
+}
+
+function showDisputeModal() {
+  disputeVisible.value = true;
+  disputeReason.value = '';
+}
+
+async function handleDispute() {
+  if (!claim.value?.handover?.id) return;
+  actionLoading.value = true;
+  try {
+    await disputeHandover(
+      claim.value.handover.id,
+      disputeReason.value.trim() || undefined,
+    );
+    message.success('争议已上报，请等待人工处理');
+    disputeVisible.value = false;
+    loadClaim();
+  } catch {
+    message.error('上报失败');
+  } finally {
+    actionLoading.value = false;
+  }
+}
+
+function showNoShowModal() {
+  noShowVisible.value = true;
+  noShowReason.value = '';
+}
+
+async function handleNoShow() {
+  if (!claim.value?.handover?.id) return;
+  actionLoading.value = true;
+  try {
+    await markHandoverNoShow(
+      claim.value.handover.id,
+      noShowReason.value.trim() || undefined,
+    );
+    message.success('爽约情况已上报');
+    noShowVisible.value = false;
+    loadClaim();
+  } catch {
+    message.error('上报失败');
+  } finally {
+    actionLoading.value = false;
+  }
 }
 
 // 线下确认悬赏发放
@@ -623,6 +909,11 @@ onMounted(() => {
         <!-- 交接信息 -->
         <Card v-if="claim.handover" title="交接信息" class="mb-4">
           <Descriptions :column="2" bordered>
+            <DescriptionsItem label="交接状态">
+              <Tag :color="handoverStatusConfig[handoverStatus]?.color || 'blue'">
+                {{ handoverStatusConfig[handoverStatus]?.label || '进行中' }}
+              </Tag>
+            </DescriptionsItem>
             <DescriptionsItem label="交接地点">
               {{
                 claim.handover.location ||
@@ -675,7 +966,43 @@ onMounted(() => {
                 }}
               </Tag>
             </DescriptionsItem>
+            <DescriptionsItem label="回传提交时间">
+              {{ formatTime(claim.handover.receiptSubmittedAt) || '-' }}
+            </DescriptionsItem>
+            <DescriptionsItem label="回传确认时间">
+              {{ formatTime(claim.handover.receiptConfirmedAt) || '-' }}
+            </DescriptionsItem>
+            <DescriptionsItem label="线下完成时间">
+              {{ formatTime(claim.handover.receiptActualTime) || '-' }}
+            </DescriptionsItem>
+            <DescriptionsItem label="线下完成地点">
+              {{ claim.handover.receiptLocation || '-' }}
+            </DescriptionsItem>
+            <DescriptionsItem label="回传备注" :span="2">
+              {{ claim.handover.receiptRemark || '-' }}
+            </DescriptionsItem>
           </Descriptions>
+          <div
+            v-if="
+              claim.handover.receiptEvidenceJson &&
+              claim.handover.receiptEvidenceJson.length > 0
+            "
+            class="mt-4"
+          >
+            <div class="mb-2 font-medium">回传凭证</div>
+            <ImagePreviewGroup>
+              <div class="flex flex-wrap gap-2">
+                <Image
+                  v-for="(img, idx) in claim.handover.receiptEvidenceJson"
+                  :key="idx"
+                  :src="img"
+                  :width="100"
+                  :height="100"
+                  class="rounded object-cover"
+                />
+              </div>
+            </ImagePreviewGroup>
+          </div>
         </Card>
 
         <!-- 双方信息 -->
@@ -730,19 +1057,6 @@ onMounted(() => {
                 发起交接
               </Button>
               <Button
-                v-if="
-                  (claim.status === 'handover' ||
-                    claim.status === 'in_handover') &&
-                  !(claim.handover as any)?.confirmedByFromAt &&
-                  !claim.handover?.publisherConfirmed
-                "
-                type="primary"
-                :loading="actionLoading"
-                @click="handleConfirmHandover"
-              >
-                确认交接
-              </Button>
-              <Button
                 v-if="canHandleReward"
                 type="primary"
                 :loading="actionLoading"
@@ -778,25 +1092,73 @@ onMounted(() => {
                 补充佐证
               </Button>
               <Button
-                v-if="
-                  !isPublisher &&
-                  (claim.status === 'handover' ||
-                    claim.status === 'in_handover') &&
-                  !(claim.handover as any)?.confirmedByToAt &&
-                  !claim.handover?.claimerConfirmed
-                "
-                type="primary"
-                :loading="actionLoading"
-                @click="handleConfirmHandover"
-              >
-                确认交接
-              </Button>
-              <Button
                 v-if="claim.status === 'completed' && !claim.hasEvaluated"
                 type="primary"
                 @click="showEvaluateModal"
               >
                 评价
+              </Button>
+            </template>
+
+            <!-- 交接阶段双方共用操作 -->
+            <template
+              v-if="
+                (isPublisher || isClaimer) &&
+                (claim.status === 'handover' || claim.status === 'in_handover')
+              "
+            >
+              <Button
+                v-if="canDirectConfirmHandover"
+                type="primary"
+                :loading="actionLoading"
+                @click="handleConfirmHandover"
+              >
+                直接确认交接
+              </Button>
+              <Button
+                v-if="canSubmitReceipt"
+                type="primary"
+                :loading="actionLoading"
+                @click="showReceiptModal"
+              >
+                提交线下回传
+              </Button>
+              <Button
+                v-if="canConfirmReceipt"
+                type="primary"
+                :loading="actionLoading"
+                @click="handleConfirmReceipt"
+              >
+                确认线下回传
+              </Button>
+              <Button
+                v-if="canReschedule"
+                :loading="actionLoading"
+                @click="showRescheduleModal"
+              >
+                改约
+              </Button>
+              <Button
+                v-if="canMarkNoShow"
+                :loading="actionLoading"
+                @click="showNoShowModal"
+              >
+                上报爽约
+              </Button>
+              <Button
+                v-if="canRaiseDispute"
+                danger
+                :loading="actionLoading"
+                @click="showDisputeModal"
+              >
+                上报争议
+              </Button>
+              <Button
+                v-if="canCancelHandoverAction"
+                :loading="actionLoading"
+                @click="handleCancelHandover"
+              >
+                取消交接
               </Button>
             </template>
 
@@ -852,6 +1214,131 @@ onMounted(() => {
           />
         </div>
       </div>
+    </Modal>
+
+    <!-- 线下回传弹窗 -->
+    <Modal
+      v-model:open="receiptVisible"
+      title="提交线下回传"
+      :confirm-loading="actionLoading"
+      @ok="handleSubmitReceipt"
+    >
+      <div class="space-y-4">
+        <div>
+          <div class="mb-1">线下完成时间</div>
+          <DatePicker
+            v-model:value="receiptActualTime"
+            show-time
+            format="YYYY-MM-DD HH:mm"
+            style="width: 100%"
+            placeholder="请选择线下完成时间"
+          />
+        </div>
+        <div>
+          <div class="mb-1">线下完成地点</div>
+          <Input
+            v-model:value="receiptLocation"
+            placeholder="请输入线下交接实际地点"
+          />
+        </div>
+        <div>
+          <div class="mb-1">回传说明</div>
+          <Input.TextArea
+            v-model:value="receiptRemark"
+            placeholder="可填写现场说明、交付情况等（可选）"
+            :rows="3"
+            :maxlength="500"
+            show-count
+          />
+        </div>
+        <div>
+          <div class="mb-1">回传凭证</div>
+          <Upload
+            v-model:file-list="receiptFileList"
+            action="/api/upload"
+            list-type="picture-card"
+            :max-count="6"
+            accept="image/*"
+            @change="handleReceiptUploadChange"
+          >
+            <div v-if="receiptFileList.length < 6">
+              <div class="text-2xl">+</div>
+              <div class="mt-2">上传凭证</div>
+            </div>
+          </Upload>
+          <div class="text-gray-500">可上传交接凭证图片，最多6张</div>
+        </div>
+      </div>
+    </Modal>
+
+    <!-- 改约弹窗 -->
+    <Modal
+      v-model:open="rescheduleVisible"
+      title="改约"
+      :confirm-loading="actionLoading"
+      @ok="handleReschedule"
+    >
+      <div class="space-y-4">
+        <div>
+          <div class="mb-1">新的交接时间</div>
+          <DatePicker
+            v-model:value="rescheduleTime"
+            show-time
+            format="YYYY-MM-DD HH:mm"
+            placeholder="请选择新的交接时间"
+            style="width: 100%"
+          />
+        </div>
+        <div>
+          <div class="mb-1">新的交接地点</div>
+          <Input
+            v-model:value="rescheduleLocation"
+            placeholder="请输入新的交接地点"
+          />
+        </div>
+        <div>
+          <div class="mb-1">改约原因</div>
+          <Input.TextArea
+            v-model:value="rescheduleReason"
+            placeholder="请输入改约原因（可选）"
+            :rows="3"
+            :maxlength="300"
+            show-count
+          />
+        </div>
+      </div>
+    </Modal>
+
+    <!-- 争议弹窗 -->
+    <Modal
+      v-model:open="disputeVisible"
+      title="上报争议"
+      :confirm-loading="actionLoading"
+      @ok="handleDispute"
+    >
+      <Input.TextArea
+        v-model:value="disputeReason"
+        placeholder="请描述争议原因（可选）"
+        :rows="4"
+        :maxlength="500"
+        show-count
+      />
+    </Modal>
+
+    <!-- 爽约弹窗 -->
+    <Modal
+      v-model:open="noShowVisible"
+      title="上报爽约"
+      :confirm-loading="actionLoading"
+      @ok="handleNoShow"
+    >
+      <Input.TextArea
+        v-model:value="noShowReason"
+        placeholder="请描述爽约情况（可选）"
+        :rows="4"
+        :maxlength="500"
+        show-count
+      />
     </Modal>
 
     <!-- 补充佐证弹窗 -->

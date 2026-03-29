@@ -1,5 +1,6 @@
 package cn.zhangchuangla.common.core.property;
 
+import cn.zhangchuangla.common.core.utils.ProjectPathResolver;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
@@ -20,5 +21,8 @@ public class AppProperty {
      */
     private String uploadPath;
 
+    public String getResolvedUploadPath() {
+        return ProjectPathResolver.resolveFrontendPublicDir(uploadPath).toString();
+    }
 
 }

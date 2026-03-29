@@ -1,11 +1,13 @@
 package cn.zhangchuangla.api.controller.lostfound;
 
+import cn.zhangchuangla.common.core.utils.ProjectPathResolver;
 import cn.zhangchuangla.framework.annotation.Anonymous;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -19,6 +21,7 @@ import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -91,7 +94,7 @@ public class FileAccessController {
             // 构建完整文件路径（优先前端 public/uploads 目录）
             Path filePath = resolveExistingPath(relativePath);
             if (filePath == null) {
-                return ResponseEntity.notFound().build();
+                return buildPlaceholderResponse(relativePath);
             }
             
             // 5. 验证文件头魔数（防止恶意文件伪装）
@@ -134,9 +137,7 @@ public class FileAccessController {
 
     private Path resolveExistingPath(String relativePath) {
         List<Path> basePaths = new ArrayList<>();
-        if (StringUtils.hasText(frontendPath)) {
-            basePaths.add(Paths.get(frontendPath).normalize());
-        }
+        basePaths.add(ProjectPathResolver.resolveFrontendUploadsDir(frontendPath));
         basePaths.add(Paths.get(uploadPath).normalize());
 
         for (Path basePath : basePaths) {
@@ -151,6 +152,37 @@ public class FileAccessController {
         }
         log.warn("文件不存在: {}", relativePath);
         return null;
+    }
+
+    private ResponseEntity<Resource> buildPlaceholderResponse(String relativePath) {
+        log.info("使用占位图替代缺失资源: {}", relativePath);
+
+        String svg = """
+                <svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
+                  <defs>
+                    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#f3f4f6"/>
+                      <stop offset="100%" stop-color="#e5e7eb"/>
+                    </linearGradient>
+                  </defs>
+                  <rect width="640" height="360" fill="url(#bg)"/>
+                  <g fill="#94a3b8" font-family="Arial, sans-serif" text-anchor="middle">
+                    <circle cx="320" cy="140" r="42" fill="#cbd5e1"/>
+                    <path d="M250 238c18-34 52-52 70-52s52 18 70 52" fill="none" stroke="#94a3b8" stroke-width="18" stroke-linecap="round"/>
+                    <text x="320" y="300" font-size="24" fill="#64748b">图片暂不可用</text>
+                  </g>
+                </svg>
+                """;
+
+        ByteArrayResource resource = new ByteArrayResource(svg.getBytes(StandardCharsets.UTF_8));
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("image/svg+xml"));
+        headers.setCacheControl("max-age=60");
+        headers.set("X-Content-Type-Options", "nosniff");
+        headers.set("Content-Disposition", "inline");
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(resource);
     }
     
     /**

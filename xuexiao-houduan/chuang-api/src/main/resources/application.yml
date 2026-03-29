@@ -1,5 +1,5 @@
 app:
-  upload-path: /Users/zhangchuang/DevelopFileUpload
+  upload-path: ${user.dir}/xuexiao-qian/apps/web-antd/public
 
 # 本地文件上传配置
 file:
@@ -7,7 +7,7 @@ file:
     path: C:/uploads/lostfound
     url-prefix: /uploads
     # 前端public目录路径，上传的文件会保存到这里
-    frontend-path: C:/Users/f/Desktop/开题报告_校园互助失物招领平台_/前端/echoPro-front-end/apps/web-antd/public/uploads
+    frontend-path: ${user.dir}/../xuexiao-qian/apps/web-antd/public/uploads
 spring:
   application:
     name: 系统

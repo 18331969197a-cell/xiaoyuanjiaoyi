@@ -8,7 +8,7 @@ import { defineOverridesPreferences } from '@vben/preferences';
 export const overridesPreferences = defineOverridesPreferences({
   app: {
     accessMode: 'backend',
-    name: '校园圈',
+    name: '校园互助失物招领平台',
     enableRefreshToken: true,
     loginExpiredMode: 'modal',
   },

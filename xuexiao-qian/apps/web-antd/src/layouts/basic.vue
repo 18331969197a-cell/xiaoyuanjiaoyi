@@ -23,6 +23,7 @@ import {
 import { LostfoundNotification } from '#/components/LostfoundNotification';
 import { useMessageStore } from '#/composables/useMessageStore';
 import { useAuthStore } from '#/store';
+import { resolveLegacyImage } from '#/utils/assets';
 import LoginForm from '#/views/_core/authentication/login.vue';
 
 const router = useRouter();
@@ -113,7 +114,10 @@ const menus = computed(() => [
 ]);
 
 const avatar = computed(() => {
-  return userStore.userInfo?.avatar ?? preferences.app.defaultAvatar;
+  return resolveLegacyImage(
+    userStore.userInfo?.avatar,
+    preferences.app.defaultAvatar,
+  );
 });
 
 async function handleLogout() {

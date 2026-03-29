@@ -1,4 +1,4 @@
-import type { Recordable } from '@vben/types';
+import type { AuthApi } from '#/api';
 
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -28,7 +28,7 @@ export const useAuthStore = defineStore('auth', () => {
    * @param onSuccess
    */
   async function authLogin(
-    params: Recordable<any>,
+    params: AuthApi.LoginParams,
     onSuccess?: () => Promise<void> | void,
   ) {
     // 异步处理用户登录操作并获取 accessToken

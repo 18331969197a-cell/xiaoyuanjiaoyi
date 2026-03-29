@@ -258,6 +258,10 @@ async function handleExport() {
     csvContent += `寻物启事,${data.overview?.lostPosts || 0}\n`;
     csvContent += `招领信息,${data.overview?.foundPosts || 0}\n`;
     csvContent += `成功找回,${data.overview?.recoveredCount || 0}\n`;
+    csvContent += `审核通过数,${data.overview?.approvedClaims || 0}\n`;
+    csvContent += `交接完成数,${data.overview?.completedClaims || data.overview?.recoveredCount || 0}\n`;
+    csvContent += `审核通过率,${data.overview?.approvedRate || 0}%\n`;
+    csvContent += `交接完成率,${data.overview?.handoverCompletionRate || 0}%\n`;
     csvContent += `找回率,${data.overview?.recoveryRate || 0}%\n`;
     csvContent += `活跃用户,${data.overview?.activeUsers || 0}\n`;
     csvContent += `总认领数,${data.overview?.totalClaims || 0}\n`;
@@ -402,10 +406,40 @@ onMounted(() => {
           </Col>
           <Col :xs="12" :sm="6">
             <Card>
-              <Statistic title="总认领数" :value="overview?.totalClaims || 0" />
+              <Statistic title="审核通过数" :value="overview?.approvedClaims || 0" />
             </Card>
           </Col>
           <Col :xs="12" :sm="6">
+            <Card>
+              <Statistic
+                title="交接完成率"
+                :value="overview?.handoverCompletionRate || 0"
+                suffix="%"
+                :precision="1"
+                :value-style="{ color: '#1677ff' }"
+              />
+            </Card>
+          </Col>
+        </Row>
+
+        <Row :gutter="[16, 16]" class="mt-4">
+          <Col :xs="12" :sm="8">
+            <Card>
+              <Statistic title="总认领数" :value="overview?.totalClaims || 0" />
+            </Card>
+          </Col>
+          <Col :xs="12" :sm="8">
+            <Card>
+              <Statistic
+                title="审核通过率"
+                :value="overview?.approvedRate || 0"
+                suffix="%"
+                :precision="1"
+                :value-style="{ color: '#13c2c2' }"
+              />
+            </Card>
+          </Col>
+          <Col :xs="12" :sm="8">
             <Card>
               <Statistic
                 title="发放积分"

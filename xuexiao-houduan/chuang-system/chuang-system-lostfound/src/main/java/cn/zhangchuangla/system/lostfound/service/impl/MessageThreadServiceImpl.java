@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 消息会话服务实现
@@ -232,5 +233,17 @@ public class MessageThreadServiceImpl implements MessageThreadService {
             }
         }
         return thread;
+    }
+
+    @Override
+    public Long getCounterpartyUserId(Long threadId, Long userId) {
+        BizMsgThread thread = threadMapper.selectById(threadId);
+        if (thread == null) {
+            throw new BusinessException(ErrorCode.DATA_NOT_FOUND, "会话不存在");
+        }
+        if (!Objects.equals(thread.getUserAId(), userId) && !Objects.equals(thread.getUserBId(), userId)) {
+            throw new BusinessException(ErrorCode.OPERATION_NOT_ALLOWED, "无权访问该会话");
+        }
+        return Objects.equals(thread.getUserAId(), userId) ? thread.getUserBId() : thread.getUserAId();
     }
 }

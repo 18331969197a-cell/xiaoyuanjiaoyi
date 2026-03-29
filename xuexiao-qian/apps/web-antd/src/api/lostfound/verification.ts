@@ -48,5 +48,3 @@ async function checkVerified(): Promise<boolean> {
 }
 
 export { checkVerified, getVerificationStatus, submitVerification };
-
-export type { VerificationRequest, VerificationStatus };

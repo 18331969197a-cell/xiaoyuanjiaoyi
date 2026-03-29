@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { PointsInfo, PointsLog } from '#/api/lostfound/points';
 
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { Page } from '@vben/common-ui';
@@ -38,6 +38,18 @@ const giftStats = ref({
   totalGifts: 0,
   pendingOrders: 0,
   completedOrders: 0,
+});
+
+const nextLevelPoints = computed(() => pointsInfo.value?.nextLevelPoints ?? 0);
+const currentPoints = computed(() => pointsInfo.value?.points ?? 0);
+const remainingPoints = computed(() =>
+  Math.max(0, nextLevelPoints.value - currentPoints.value),
+);
+const levelProgress = computed(() => {
+  if (nextLevelPoints.value <= 0) {
+    return 0;
+  }
+  return Math.min((currentPoints.value / nextLevelPoints.value) * 100, 100);
 });
 
 // 积分类型配置（支持大写和小写key）
@@ -190,7 +202,7 @@ onMounted(() => {
             <Col :xs="12" :sm="6">
               <Statistic
                 title="当前积分"
-                :value="pointsInfo?.points || 0"
+                :value="currentPoints"
                 :value-style="{ color: '#1890ff' }"
               />
             </Col>
@@ -220,16 +232,16 @@ onMounted(() => {
           <div v-if="pointsInfo" class="mt-6">
             <div class="mb-2 flex items-center justify-between">
               <span>距离下一等级还需
-                {{ pointsInfo.nextLevelPoints - pointsInfo.points }} 积分</span>
+                {{ remainingPoints }} 积分</span>
               <span class="text-gray-500">
-                {{ pointsInfo.points }} / {{ pointsInfo.nextLevelPoints }}
+                {{ currentPoints }} / {{ nextLevelPoints }}
               </span>
             </div>
             <div class="h-2 overflow-hidden rounded-full bg-gray-200">
               <div
                 class="h-full rounded-full bg-blue-500 transition-all"
                 :style="{
-                  width: `${Math.min((pointsInfo.points / pointsInfo.nextLevelPoints) * 100, 100)}%`,
+                  width: `${levelProgress}%`,
                 }"
               ></div>
             </div>

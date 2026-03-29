@@ -2,6 +2,7 @@ package cn.zhangchuangla.api.controller.lostfound;
 
 import cn.zhangchuangla.common.core.base.BaseController;
 import cn.zhangchuangla.common.core.entity.base.AjaxResult;
+import cn.zhangchuangla.common.core.utils.ProjectPathResolver;
 import cn.zhangchuangla.common.core.utils.SecurityUtils;
 import cn.zhangchuangla.system.storage.model.entity.StorageFile;
 import cn.zhangchuangla.system.storage.service.StorageFileService;
@@ -74,6 +75,12 @@ public class LocalUploadController extends BaseController {
         FILE_SIGNATURES.put("webp", new byte[]{0x52, 0x49, 0x46, 0x46}); // RIFF header
     }
 
+    private String resolveFrontendUploadRoot() {
+        return ProjectPathResolver.resolveFrontendUploadsDir(
+                (frontendPath != null && !frontendPath.isEmpty()) ? frontendPath : uploadPath
+        ).toString();
+    }
+
     /**
      * 上传图片到本地
      */
@@ -122,7 +129,7 @@ public class LocalUploadController extends BaseController {
             
             // 创建目录 - 优先使用前端public目录
             String relativePath = "posts/" + dateDir;
-            String actualUploadPath = (frontendPath != null && !frontendPath.isEmpty()) ? frontendPath : uploadPath;
+            String actualUploadPath = resolveFrontendUploadRoot();
             Path dirPath = Paths.get(actualUploadPath, relativePath);
             Files.createDirectories(dirPath);
             
@@ -198,7 +205,7 @@ public class LocalUploadController extends BaseController {
             
             // 创建目录 - 头像保存到avatars目录
             String relativePath = "avatars/" + dateDir;
-            String actualUploadPath = (frontendPath != null && !frontendPath.isEmpty()) ? frontendPath : uploadPath;
+            String actualUploadPath = resolveFrontendUploadRoot();
             Path dirPath = Paths.get(actualUploadPath, relativePath);
             Files.createDirectories(dirPath);
             

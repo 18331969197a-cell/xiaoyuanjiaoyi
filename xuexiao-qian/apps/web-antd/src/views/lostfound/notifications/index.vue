@@ -33,6 +33,10 @@ import {
   NotificationType,
 } from '#/api/lostfound/notification';
 
+function getTypeConfig(type?: string) {
+  return getNotificationTypeConfig(type);
+}
+
 const router = useRouter();
 const loading = ref(false);
 const activeTab = ref<string>('all');
@@ -198,10 +202,10 @@ onMounted(() => {
                 <ListItemMeta>
                   <template #avatar>
                     <Tag
-                      :color="getNotificationTypeConfig(item.type).color"
+                      :color="getTypeConfig(item.type).color"
                       class="flex items-center justify-center"
                     >
-                      {{ getNotificationTypeConfig(item.type).label }}
+                      {{ getTypeConfig(item.type).label }}
                     </Tag>
                   </template>
                   <template #title>

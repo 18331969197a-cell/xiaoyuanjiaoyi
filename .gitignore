@@ -1,3 +1,6 @@
 # do not push local zip or git backups
 xuexiao-houduan.zip
 .git-backups/
+
+# ReCode local database
+.recode

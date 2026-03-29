@@ -27,6 +27,10 @@ import {
   markAsRead,
 } from '#/api/lostfound/notification';
 
+function getTypeConfig(type?: string) {
+  return getNotificationTypeConfig(type);
+}
+
 defineOptions({ name: 'LostfoundNotification' });
 
 const router = useRouter();
@@ -175,10 +179,10 @@ onMounted(() => {
                     <template #title>
                       <div class="flex items-center gap-2">
                         <Tag
-                          :color="getNotificationTypeConfig(item.type).color"
+                          :color="getTypeConfig(item.type).color"
                           size="small"
                         >
-                          {{ getNotificationTypeConfig(item.type).label }}
+                          {{ getTypeConfig(item.type).label }}
                         </Tag>
                         <span
                           class="flex-1 truncate text-sm"

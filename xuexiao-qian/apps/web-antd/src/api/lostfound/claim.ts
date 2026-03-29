@@ -1,6 +1,7 @@
 import type { PageResult } from '@vben/types';
 
 import { requestClient } from '#/api/request';
+import { normalizePageResult } from '#/api/utils/page';
 
 // 认领类型
 export interface BizClaim {
@@ -98,19 +99,24 @@ async function getClaimById(id: number) {
  * 获取我发起的认领
  */
 async function getMyClaims(params?: ClaimQueryParams) {
-  return requestClient.get<PageResult<BizClaim[]>>('/lostfound/claim/my', {
-    params,
-  });
+  const res = await requestClient.get<PageResult<ClaimListItem>>(
+    '/lostfound/claim/my',
+    {
+      params,
+    },
+  );
+  return normalizePageResult(res, params);
 }
 
 /**
  * 获取我收到的认领
  */
 async function getReceivedClaims(params?: ClaimQueryParams) {
-  return requestClient.get<PageResult<BizClaim[]>>(
+  const res = await requestClient.get<PageResult<ClaimListItem>>(
     '/lostfound/claim/received',
     { params },
   );
+  return normalizePageResult(res, params);
 }
 
 /**

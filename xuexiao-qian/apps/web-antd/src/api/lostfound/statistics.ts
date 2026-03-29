@@ -41,8 +41,11 @@ export interface LocationStat {
 
 export interface ClaimSuccessRate {
   totalClaims?: number;
+  approvedClaims?: number;
   successClaims?: number;
+  approvedRate?: number;
   successRate?: number;
+  handoverCompletionRate?: number;
 }
 
 export interface StatsParams {
@@ -56,6 +59,10 @@ export interface OverviewStats {
   lostPosts?: number;
   foundPosts?: number;
   recoveredCount?: number;
+  approvedClaims?: number;
+  completedClaims?: number;
+  approvedRate?: number;
+  handoverCompletionRate?: number;
   recoveryRate?: number;
   activeUsers?: number;
   totalClaims?: number;

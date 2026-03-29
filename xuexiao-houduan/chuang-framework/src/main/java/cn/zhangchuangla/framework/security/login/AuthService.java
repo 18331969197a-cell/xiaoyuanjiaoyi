@@ -1,5 +1,6 @@
 package cn.zhangchuangla.framework.security.login;
 
+import cn.zhangchuangla.common.core.constant.RolesConstant;
 import cn.zhangchuangla.common.core.entity.security.SysUser;
 import cn.zhangchuangla.common.core.enums.BusinessType;
 import cn.zhangchuangla.common.core.enums.DeviceType;
@@ -22,8 +23,10 @@ import cn.zhangchuangla.framework.security.login.limiter.LoginFrequencyLimiter;
 import cn.zhangchuangla.framework.security.login.limiter.PasswordRetryLimiter;
 import cn.zhangchuangla.framework.security.token.CacheTokenStore;
 import cn.zhangchuangla.framework.security.token.TokenService;
+import cn.zhangchuangla.system.core.model.entity.SysRole;
 import cn.zhangchuangla.system.core.model.entity.SysSecurityLog;
 import cn.zhangchuangla.system.core.service.CaptchaService;
+import cn.zhangchuangla.system.core.service.SysRoleService;
 import cn.zhangchuangla.system.core.service.SysUserRoleService;
 import cn.zhangchuangla.system.core.service.SysUserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,6 +43,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 登录服务实现类
@@ -58,6 +62,7 @@ public class AuthService {
     private final AsyncLogService asyncLogService;
     private final BCryptPasswordEncoder passwordEncoder;
     private final SysUserService sysUserService;
+    private final SysRoleService sysRoleService;
     private final SysUserRoleService sysUserRoleService;
     private final DeviceLimiter deviceLimiter;
     private final CacheTokenStore cacheTokenStore;
@@ -264,13 +269,40 @@ public class AuthService {
         user.setCreateTime(new Date());
         sysUserService.save(user);
         
-        // 为新注册用户分配默认角色（demo角色，ID=23）
+        // 为新注册用户分配普通用户角色，避免误授后台管理员权限
         Long userId = user.getUserId();
-        List<Long> defaultRoles = Collections.singletonList(23L);
+        List<Long> defaultRoles = Collections.singletonList(resolveDefaultRegisterRoleId());
         sysUserRoleService.addUserRoleAssociation(defaultRoles, userId);
-        log.info("用户注册成功，用户名: {}, 用户ID: {}, 已分配默认角色", request.getUsername(), userId);
+        log.info("用户注册成功，用户名: {}, 用户ID: {}, 已分配默认用户角色: {}", request.getUsername(), userId, defaultRoles);
         
         return userId;
+    }
+
+    private Long resolveDefaultRegisterRoleId() {
+        return sysRoleService.lambdaQuery()
+                .eq(SysRole::getStatus, 0)
+                .list()
+                .stream()
+                .filter(Objects::nonNull)
+                .filter(role -> isRegisterDefaultRole(role.getRoleKey(), role.getRoleName()))
+                .map(SysRole::getId)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElseThrow(() -> new ServiceException("未找到默认用户角色，请联系管理员检查角色配置"));
+    }
+
+    private boolean isRegisterDefaultRole(String roleKey, String roleName) {
+        if (RolesConstant.SUPER_ADMIN.equals(roleKey)
+                || RolesConstant.ADMIN.equals(roleKey)
+                || "demo".equalsIgnoreCase(roleKey)
+                || "admindemo".equalsIgnoreCase(roleKey)) {
+            return false;
+        }
+
+        return RolesConstant.USER.equalsIgnoreCase(roleKey)
+                || "222".equalsIgnoreCase(roleKey)
+                || "用户".equals(roleName)
+                || "普通用户".equals(roleName);
     }
 
     /**

@@ -234,9 +234,7 @@ onMounted(() => {
               :checked="editForm.status === 1"
               checked-children="启用"
               un-checked-children="禁用"
-              @change="
-                (checked: boolean) => (editForm.status = checked ? 1 : 0)
-              "
+              @change="(checked) => (editForm.status = checked === true ? 1 : 0)"
             />
           </Form.Item>
         </Form>

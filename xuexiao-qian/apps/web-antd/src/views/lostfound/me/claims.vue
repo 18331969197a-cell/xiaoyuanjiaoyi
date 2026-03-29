@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { ClaimListItem } from '#/api/lostfound/claim';
+import type { Key } from 'ant-design-vue/es/_util/type';
 
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -77,7 +78,7 @@ const columns = [
     title: '操作',
     key: 'action',
     width: 150,
-    fixed: 'right',
+    fixed: 'right' as const,
   },
 ];
 
@@ -101,8 +102,8 @@ async function loadClaims() {
 }
 
 // Tab 切换
-function onTabChange(key: string) {
-  activeTab.value = key;
+function onTabChange(key: Key) {
+  activeTab.value = String(key);
   currentPage.value = 1;
   loadClaims();
 }
@@ -120,7 +121,8 @@ function viewDetail(id: number) {
 }
 
 // 查看帖子
-function viewPost(postId: number) {
+function viewPost(postId?: number) {
+  if (!postId) return;
   router.push(`/lostfound/posts/${postId}`);
 }
 
@@ -130,6 +132,7 @@ async function handleCancel(claim: ClaimListItem) {
     title: '取消认领',
     content: '确定取消该认领申请吗？',
     async onOk() {
+      if (!claim.id) return;
       try {
         await cancelClaim(claim.id);
         message.success('已取消');

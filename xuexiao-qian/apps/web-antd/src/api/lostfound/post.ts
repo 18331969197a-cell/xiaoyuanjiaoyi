@@ -1,6 +1,7 @@
 import type { PageResult } from '@vben/types';
 
 import { requestClient } from '#/api/request';
+import { normalizePageResult } from '#/api/utils/page';
 
 // 帖子类型
 export interface BizPost {
@@ -8,7 +9,7 @@ export interface BizPost {
   postType?: string;
   title?: string;
   description?: string;
-  imagesJson?: string;
+  imagesJson?: string | string[];
   rewardAmount?: number;
   rewardStatus?: string;
   rewardDesc?: string;
@@ -35,6 +36,8 @@ export interface BizPost {
   userName?: string;
   createdByName?: string;
   createTime?: string;
+  auditAt?: string;
+  reviewAt?: string;
   updateTime?: string;
 }
 
@@ -95,18 +98,26 @@ export interface PostSearchParams {
  * 获取帖子列表
  */
 async function getPostList(params?: PostQueryParams) {
-  return requestClient.get<PageResult<BizPost>>('/lostfound/post/list', {
-    params,
-  });
+  const res = await requestClient.get<PageResult<BizPost>>(
+    '/lostfound/post/list',
+    {
+      params,
+    },
+  );
+  return normalizePageResult(res, params);
 }
 
 /**
  * 搜索帖子
  */
 async function searchPosts(params: PostSearchParams) {
-  return requestClient.get<PageResult<PostListItem>>('/lostfound/post/search', {
-    params,
-  });
+  const res = await requestClient.get<PageResult<PostListItem>>(
+    '/lostfound/post/search',
+    {
+      params,
+    },
+  );
+  return normalizePageResult(res, params);
 }
 
 /**
@@ -187,9 +198,13 @@ async function getMyDrafts() {
  * 管理端获取帖子列表
  */
 async function adminGetPostList(params?: PostQueryParams) {
-  return requestClient.get<PageResult<BizPost>>('/lostfound/post/admin/list', {
-    params,
-  });
+  const res = await requestClient.get<PageResult<BizPost>>(
+    '/lostfound/post/admin/list',
+    {
+      params,
+    },
+  );
+  return normalizePageResult(res, params);
 }
 
 /**

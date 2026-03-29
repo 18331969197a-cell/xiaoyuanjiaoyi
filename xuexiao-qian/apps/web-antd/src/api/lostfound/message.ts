@@ -1,6 +1,7 @@
 import type { PageResult } from '@vben/types';
 
 import { requestClient } from '#/api/request';
+import { normalizePageResult } from '#/api/utils/page';
 
 // 消息会话类型
 export interface BizMsgThread {
@@ -37,6 +38,23 @@ export interface BizMessage {
   createTime?: string;
 }
 
+export interface ChatRiskSummary {
+  targetUserId?: number;
+  risky?: boolean;
+  riskLevel?: 'HIGH' | 'LOW' | 'MEDIUM';
+  riskLevelText?: string;
+  totalCount?: number;
+  openCount?: number;
+  latestRiskType?: string;
+  latestRiskTypeText?: string;
+  latestActionType?: string;
+  latestActionTypeText?: string;
+  latestEventStatus?: string;
+  latestEventStatusText?: string;
+  latestEventTime?: string;
+  hint?: string;
+}
+
 /**
  * 发送私信
  */
@@ -48,10 +66,11 @@ async function sendMessage(data: BizMessage) {
  * 获取会话列表
  */
 async function getThreads(params?: { pageNum?: number; pageSize?: number }) {
-  return requestClient.get<PageResult<BizMsgThread>>(
+  const res = await requestClient.get<PageResult<BizMsgThread>>(
     '/lostfound/message/threads',
     { params },
   );
+  return normalizePageResult(res, params);
 }
 
 /**
@@ -63,9 +82,10 @@ const getThreadList = getThreads;
  * 获取会话消息
  */
 async function getThreadMessages(threadId: number) {
-  return requestClient.get<BizMessage[]>(
-    `/lostfound/message/thread/${threadId}`,
-  );
+  const res = await requestClient.get<
+    BizMessage[] | PageResult<BizMessage>
+  >(`/lostfound/message/thread/${threadId}`);
+  return Array.isArray(res) ? res : normalizePageResult(res).rows;
 }
 
 /**
@@ -100,11 +120,21 @@ async function getThreadDetail(threadId: number) {
   );
 }
 
+/**
+ * 获取会话风险摘要
+ */
+async function getThreadRiskSummary(threadId: number) {
+  return requestClient.get<ChatRiskSummary>(
+    `/lostfound/message/thread/${threadId}/risk-summary`,
+  );
+}
+
 export {
   getOrCreateThread,
   getThreadDetail,
   getThreadList,
   getThreadMessages,
+  getThreadRiskSummary,
   getThreads,
   getUnreadCount,
   markAsRead,

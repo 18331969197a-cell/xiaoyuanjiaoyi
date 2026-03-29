@@ -94,7 +94,7 @@ const chartOption = computed(() => {
         data: temperatures,
         smooth: true,
         symbol: 'circle',
-        symbolSize: (value: any, params: any) => {
+        symbolSize: (_value: any, params: any) => {
           return params.dataIndex === currentIndex ? 12 : 6;
         },
         itemStyle: {
@@ -130,7 +130,7 @@ const chartOption = computed(() => {
         data: salinities,
         smooth: true,
         symbol: 'circle',
-        symbolSize: (value: any, params: any) => {
+        symbolSize: (_value: any, params: any) => {
           return params.dataIndex === currentIndex ? 12 : 6;
         },
         itemStyle: {

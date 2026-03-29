@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="chuang-common-websocket" />
+        <module name="chuang-common-mq" />
+        <module name="chuang-framework" />
+        <module name="chuang-quartz" />
+        <module name="chuang-api" />
+        <module name="chuang-common-core" />
+        <module name="chuang-system-message" />
+        <module name="chuang-system-core" />
+        <module name="chuang-system-storage" />
+        <module name="chuang-system-lostfound" />
+        <module name="chuang-system-monitor" />
+        <module name="chuang-common-cache" />
+        <module name="chuang-common-excel" />
+      </profile>
+    </annotationProcessing>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="chuang-api" options="-parameters" />
+      <module name="chuang-common" options="-parameters" />
+      <module name="chuang-common-cache" options="-parameters" />
+      <module name="chuang-common-core" options="-parameters" />
+      <module name="chuang-common-excel" options="-parameters" />
+      <module name="chuang-common-mq" options="-parameters" />
+      <module name="chuang-common-websocket" options="-parameters" />
+      <module name="chuang-framework" options="-parameters" />
+      <module name="chuang-quartz" options="-parameters" />
+      <module name="chuang-system" options="-parameters" />
+      <module name="chuang-system-core" options="-parameters" />
+      <module name="chuang-system-lostfound" options="-parameters" />
+      <module name="chuang-system-message" options="-parameters" />
+      <module name="chuang-system-monitor" options="-parameters" />
+      <module name="chuang-system-storage" options="-parameters" />
+      <module name="echo-pro" options="-parameters" />
+    </option>
+  </component>
+</project>

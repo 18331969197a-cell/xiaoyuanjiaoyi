@@ -15,7 +15,11 @@ import lombok.Getter;
 public enum HandoverStatusEnum {
 
     PENDING("PENDING", "待确认"),
-    CONFIRMED("CONFIRMED", "已确认");
+    RESCHEDULED("RESCHEDULED", "已改约"),
+    NO_SHOW("NO_SHOW", "爽约待处理"),
+    DISPUTED("DISPUTED", "争议处理中"),
+    CONFIRMED("CONFIRMED", "已确认"),
+    CANCELLED("CANCELLED", "已取消");
 
     @EnumValue
     @JsonValue

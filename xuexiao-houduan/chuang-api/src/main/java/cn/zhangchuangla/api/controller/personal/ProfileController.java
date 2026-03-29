@@ -178,7 +178,7 @@ public class ProfileController extends BaseController {
     @Operation(summary = "修改用户密码")
     @SecurityLog(title = "修改密码", businessType = BusinessType.UPDATE)
     @PutMapping("/security/password")
-    @PreAuthorize("@ss.hasPermission('personal:profile:passowrd')")
+    @PreAuthorize("@ss.hasPermission('personal:profile:password')")
     public AjaxResult<Void> updatePassword(@RequestBody @Validated UpdatePasswordRequest request) {
         boolean result = sysUserService.updatePassword(request);
         return toAjax(result);

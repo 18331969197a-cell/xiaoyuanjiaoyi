@@ -54,24 +54,35 @@ public class ClaimServiceImpl implements ClaimService {
         // 自动匹配评分：如果存在拾得者特征与认领人答案，计算简单重合度
         int matchScore = computeMatchScore(post.getFeatureTokens(), claim.getFeatureAnswers());
         claim.setAutoMatchScore(matchScore);
-        if (post.getFeatureTokens() != null && !post.getFeatureTokens().isEmpty() && matchScore < 40) {
-            claim.setStatus(ClaimStatusEnum.NEED_PROOF);
-            claim.setReviewReason("自动匹配得分较低，请补充佐证");
-        } else {
-            claim.setStatus(ClaimStatusEnum.APPLIED);
-        }
-        claim.setCreateTime(LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+        claim.setStatus(ClaimStatusEnum.APPROVED);
+        claim.setReviewBy(post.getCreatedBy());
+        claim.setReviewAt(now);
+        claim.setReviewReason("系统自动通过");
+        claim.setCreateTime(now);
         claimMapper.insert(claim);
-        
-        // 发送通知给帖子发布者
+
+        // 自动通过后，帖子进入认领中
+        post.setStatus(PostStatusEnum.CLAIMING);
+        postMapper.updateById(post);
+
+        // 自动通过后通知双方
         if (notificationService != null) {
             notificationService.createNotification(
-                post.getCreatedBy(),
-                NotificationTypeEnum.CLAIM,
-                "收到新的认领申请",
-                "您发布的「" + post.getTitle() + "」收到了新的认领申请，请及时处理。",
-                "CLAIM",
-                claim.getId()
+                    post.getCreatedBy(),
+                    NotificationTypeEnum.CLAIM,
+                    "收到新的认领申请（已自动通过）",
+                    "您发布的「" + post.getTitle() + "」有新的认领，系统已自动通过，请尽快发起交接。",
+                    "CLAIM",
+                    claim.getId()
+            );
+            notificationService.createNotification(
+                    claimantId,
+                    NotificationTypeEnum.CLAIM,
+                    "认领申请已自动通过",
+                    "您对「" + post.getTitle() + "」的认领申请已自动通过，请与发布者沟通交接。",
+                    "CLAIM",
+                    claim.getId()
             );
         }
         
@@ -90,8 +101,35 @@ public class ClaimServiceImpl implements ClaimService {
         }
         claim.setProofText(proofText);
         claim.setProofImagesJson(proofImagesJson);
-        claim.setStatus(ClaimStatusEnum.APPLIED);
+        claim.setStatus(ClaimStatusEnum.APPROVED);
+        claim.setReviewBy(claim.getPosterId());
+        claim.setReviewAt(LocalDateTime.now());
+        claim.setReviewReason("补充佐证后系统自动通过");
         claimMapper.updateById(claim);
+
+        BizPost post = postMapper.selectById(claim.getPostId());
+        if (post != null) {
+            post.setStatus(PostStatusEnum.CLAIMING);
+            postMapper.updateById(post);
+            if (notificationService != null) {
+                notificationService.createNotification(
+                        claim.getPosterId(),
+                        NotificationTypeEnum.CLAIM,
+                        "认领补充材料已自动通过",
+                        "认领人已补充佐证并自动通过，请尽快发起交接。",
+                        "CLAIM",
+                        claimId
+                );
+                notificationService.createNotification(
+                        claim.getClaimantId(),
+                        NotificationTypeEnum.CLAIM,
+                        "补充佐证已通过",
+                        "您补充的佐证已自动通过，请与发布者沟通交接。",
+                        "CLAIM",
+                        claimId
+                );
+            }
+        }
     }
 
     @Override
@@ -296,7 +334,24 @@ public class ClaimServiceImpl implements ClaimService {
         if (claim == null) {
             throw new RuntimeException("认领单不存在");
         }
+        if (claim.getStatus() != ClaimStatusEnum.APPROVED) {
+            throw new RuntimeException("当前认领状态不允许发起交接");
+        }
         claim.setStatus(ClaimStatusEnum.IN_HANDOVER);
+        claimMapper.updateById(claim);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void reopenFromHandover(Long claimId) {
+        BizClaim claim = claimMapper.selectById(claimId);
+        if (claim == null) {
+            throw new RuntimeException("认领单不存在");
+        }
+        if (claim.getStatus() != ClaimStatusEnum.IN_HANDOVER) {
+            return;
+        }
+        claim.setStatus(ClaimStatusEnum.APPROVED);
         claimMapper.updateById(claim);
     }
 

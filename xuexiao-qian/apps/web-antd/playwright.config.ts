@@ -12,7 +12,7 @@ export default defineConfig({
   workers: process.env.CI ? 2 : undefined,
   reporter: [['list'], ['html', { outputFolder: 'playwright-report' }]],
   use: {
-    baseURL: 'http://localhost:4173',
+    baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',
     headless: true,
   },
@@ -23,9 +23,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm -C apps/web-antd dev -- --host --port 4173',
-    url: 'http://localhost:4173',
+    command: 'pnpm vite --mode development --host 127.0.0.1 --port 5173 --strictPort',
+    url: 'http://localhost:5173',
     reuseExistingServer: true,
-    timeout: 120_000,
+    timeout: 180_000,
   },
 });

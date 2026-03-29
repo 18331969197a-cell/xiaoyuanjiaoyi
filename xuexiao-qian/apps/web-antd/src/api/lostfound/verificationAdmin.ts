@@ -1,6 +1,7 @@
 import type { PageResult } from '@vben/types';
 
 import { requestClient } from '#/api/request';
+import { normalizePageResult } from '#/api/utils/page';
 
 // 学生名单
 export interface StudentRoster {
@@ -60,10 +61,7 @@ async function getStudentRosterList(params?: {
     '/lostfound/admin/verification/roster',
     { params },
   );
-  return {
-    rows: (res as any).records || res.rows || [],
-    total: res.total || 0,
-  };
+  return normalizePageResult(res, params);
 }
 
 /**
@@ -101,10 +99,7 @@ async function getVerificationRecords(params?: {
     '/lostfound/admin/verification/records',
     { params },
   );
-  return {
-    rows: (res as any).records || res.rows || [],
-    total: res.total || 0,
-  };
+  return normalizePageResult(res, params);
 }
 
 /**
@@ -120,11 +115,4 @@ export {
   getVerificationRecords,
   importStudentRoster,
   revokeVerification,
-};
-
-export type {
-  ImportResult,
-  StudentRoster,
-  StudentRosterDTO,
-  VerificationRecord,
 };

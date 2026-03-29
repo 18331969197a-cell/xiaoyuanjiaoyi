@@ -36,6 +36,7 @@ import { createComment, getCommentsByPostId } from '#/api/lostfound/comment';
 import { addFavorite, removeFavorite } from '#/api/lostfound/favorite';
 import { getPostById } from '#/api/lostfound/post';
 import { createReport } from '#/api/lostfound/report';
+import { canInitiateClaim } from '#/utils/lostfound';
 
 // 获取API基础URL用于图片路径
 const { apiURL } = useAppConfig(import.meta.env, import.meta.env.PROD);
@@ -103,6 +104,8 @@ const currentImage = computed(() => {
 const hasImages = computed(
   () => post.value?.images && post.value.images.length > 0,
 );
+
+const canStartClaim = computed(() => canInitiateClaim(post.value?.status));
 
 // 获取缩略图URL
 function getThumbnailUrl(index: number): string {
@@ -434,14 +437,7 @@ onMounted(() => {
               {{ post.isFavorited ? '取消收藏' : '收藏' }}
               ({{ post.favoriteCount || 0 }})
             </Button>
-            <Button
-              v-if="
-                post.type === 'found' &&
-                (post.status === 'approved' || post.status === 'published')
-              "
-              type="primary"
-              @click="goClaim"
-            >
+            <Button v-if="canStartClaim" type="primary" @click="goClaim">
               发起认领
             </Button>
             <Button @click="contactPublisher">联系发布者</Button>

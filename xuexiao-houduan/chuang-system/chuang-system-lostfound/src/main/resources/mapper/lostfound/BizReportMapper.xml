@@ -19,11 +19,20 @@
             <if test="targetType != null and targetType != ''">
                 AND r.target_type = #{targetType}
             </if>
+            <if test="targetId != null">
+                AND r.target_id = #{targetId}
+            </if>
             <if test="status != null and status != ''">
                 AND r.status = #{status}
             </if>
             <if test="resolveAction != null and resolveAction != ''">
                 AND r.resolve_action = #{resolveAction}
+            </if>
+            <if test="startTime != null">
+                AND r.create_time <![CDATA[>=]]> #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND r.create_time <![CDATA[<=]]> #{endTime}
             </if>
         </where>
         ORDER BY r.create_time DESC

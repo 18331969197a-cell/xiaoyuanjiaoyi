@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { VxeTableGridOptions } from '#/adapter/vxe-table';
 
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 
 import { useVbenDrawer } from '@vben/common-ui';
 
@@ -54,7 +54,7 @@ const [Drawer, drawerApi] = useVbenDrawer({
 const userId = ref<string>('');
 const username = ref<string>('');
 const operationType = ref<string>('');
-const dateRange = ref<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
+const dateRange = ref<[dayjs.Dayjs, dayjs.Dayjs] | undefined>();
 const isExporting = ref(false);
 
 // 计算抽屉标题

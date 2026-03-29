@@ -5,11 +5,13 @@ export interface PageResult<T = any> {
   /** 总数量 */
   total: number;
   /** 当前页码 */
-  pageNum: number;
+  pageNum?: number;
   /** 每页数量 */
-  pageSize: number;
+  pageSize?: number;
   /** 数据列表 */
   rows: T[];
+  /** MyBatis-Plus 分页数据列表 */
+  records?: T[];
   /** 额外信息 */
   extra?: {
     [key: string]: any;

@@ -1,6 +1,7 @@
 import type { PageResult } from '@vben/types';
 
 import { requestClient } from '#/api/request';
+import { normalizePageResult } from '#/api/utils/page';
 
 // 积分记录类型
 export interface BizPointsLog {
@@ -72,12 +73,11 @@ async function getPointsRecords(params?: {
     '/lostfound/points/records',
     { params },
   );
-  // 兼容两种返回格式: MyBatis-Plus的records和标准的rows
-  const records = (res as any).records || res.rows || [];
+  const page = normalizePageResult(res, params);
   // 转换字段名以匹配前端页面使用
   return {
-    ...res,
-    rows: records.map((item: BizPointsLog) => ({
+    ...page,
+    rows: page.rows.map((item: BizPointsLog) => ({
       id: item.id,
       userId: item.userId,
       type: item.action,
@@ -114,10 +114,11 @@ async function adminGetUserPointsList(params?: {
     '/lostfound/points/admin/list',
     { params },
   );
+  const page = normalizePageResult(res, params);
   // 转换为VxeGrid期望的格式
   return {
-    rows: res.records || [],
-    total: res.total || 0,
+    rows: page.rows,
+    total: page.total || 0,
   };
 }
 

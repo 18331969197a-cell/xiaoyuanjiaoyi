@@ -17,8 +17,12 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -294,13 +298,14 @@ public class VerificationServiceImpl implements VerificationService {
         result.put("updateCount", 0);
 
         try (InputStream is = file.getInputStream();
-             Workbook workbook = new XSSFWorkbook(is)) {
+             Workbook workbook = WorkbookFactory.create(is)) {
 
             Sheet sheet = workbook.getSheetAt(0);
             List<StudentRosterDTO> students = new ArrayList<>();
+            int startRowIndex = hasHeaderRow(sheet) ? 1 : 0;
 
-            // 跳过表头，从第二行开始读取
-            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+            // 兼容“带表头”和“无表头”两种导入文件
+            for (int i = startRowIndex; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
 
@@ -349,6 +354,21 @@ public class VerificationServiceImpl implements VerificationService {
         }
 
         return result;
+    }
+
+    private boolean hasHeaderRow(Sheet sheet) {
+        Row firstRow = sheet.getRow(0);
+        if (firstRow == null) {
+            return false;
+        }
+
+        String studentNoHeader = getCellStringValue(firstRow.getCell(0));
+        String realNameHeader = getCellStringValue(firstRow.getCell(1));
+        String idCardSuffixHeader = getCellStringValue(firstRow.getCell(2));
+
+        return "学号".equals(studentNoHeader)
+                && "姓名".equals(realNameHeader)
+                && ("身份证后6位".equals(idCardSuffixHeader) || "身份证后6位数".equals(idCardSuffixHeader));
     }
 
     /**

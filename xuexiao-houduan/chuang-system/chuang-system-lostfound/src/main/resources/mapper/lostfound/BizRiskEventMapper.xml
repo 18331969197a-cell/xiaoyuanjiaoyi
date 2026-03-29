@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.zhangchuangla.system.lostfound.mapper.BizRiskEventMapper">
+
+    <select id="selectBySource" resultType="cn.zhangchuangla.system.lostfound.model.entity.BizRiskEvent">
+        SELECT *
+        FROM biz_risk_event
+        WHERE source_type = #{sourceType}
+          AND source_id = #{sourceId}
+        LIMIT 1
+    </select>
+
+    <select id="selectAdminRiskEvents" resultType="cn.zhangchuangla.system.lostfound.model.entity.BizRiskEvent">
+        SELECT e.*,
+               reporter.username AS reporter_name,
+               resolver.username AS resolver_name,
+               r.reason_detail AS report_reason_detail
+        FROM biz_risk_event e
+                 LEFT JOIN biz_report r ON e.report_id = r.id
+                 LEFT JOIN sys_user reporter ON r.reporter_id = reporter.user_id
+                 LEFT JOIN sys_user resolver ON e.resolved_by = resolver.user_id
+        <where>
+            <if test="targetType != null and targetType != ''">
+                AND e.target_type = #{targetType}
+            </if>
+            <if test="targetId != null">
+                AND e.target_id = #{targetId}
+            </if>
+            <if test="eventStatus != null and eventStatus != ''">
+                AND e.event_status = #{eventStatus}
+            </if>
+            <if test="actionType != null and actionType != ''">
+                AND e.action_type = #{actionType}
+            </if>
+            <if test="startTime != null">
+                AND e.create_time <![CDATA[>=]]> #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND e.create_time <![CDATA[<=]]> #{endTime}
+            </if>
+        </where>
+        ORDER BY e.create_time DESC
+    </select>
+
+</mapper>
+

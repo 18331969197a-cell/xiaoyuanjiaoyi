@@ -3,6 +3,21 @@ import type { PageResult } from '@vben/types';
 import type { BizPost } from './post';
 
 import { requestClient } from '#/api/request';
+import { normalizePageResult } from '#/api/utils/page';
+
+export interface FavoriteItem {
+  id: number;
+  postId: number;
+  createTime: string;
+  post: {
+    description?: string;
+    images?: string[];
+    itemName?: string;
+    locationName?: string;
+    status?: string;
+    type?: string;
+  };
+}
 
 /**
  * 添加收藏
@@ -47,9 +62,13 @@ async function getMyFavorites(params?: {
   pageNum?: number;
   pageSize?: number;
 }) {
-  return requestClient.get<PageResult<BizPost[]>>('/lostfound/favorite/my', {
-    params,
-  });
+  const res = await requestClient.get<PageResult<BizPost>>(
+    '/lostfound/favorite/my',
+    {
+      params,
+    },
+  );
+  return normalizePageResult(res, params);
 }
 
 export {

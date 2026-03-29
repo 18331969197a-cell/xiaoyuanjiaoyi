@@ -5,17 +5,19 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 交接记录实体
  *
  * @author Chuang
  */
-@TableName("biz_handover")
+@TableName(value = "biz_handover", autoResultMap = true)
 @Data
 @Schema(name = "交接记录实体")
 @AllArgsConstructor
@@ -53,6 +55,31 @@ public class BizHandover {
 
     @Schema(description = "备注")
     private String remark;
+
+    @Schema(description = "线下回传提交人")
+    private Long receiptSubmittedBy;
+
+    @Schema(description = "线下回传提交时间")
+    private LocalDateTime receiptSubmittedAt;
+
+    @Schema(description = "线下交接实际完成时间")
+    private LocalDateTime receiptActualTime;
+
+    @Schema(description = "线下交接实际地点")
+    private String receiptLocation;
+
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    @Schema(description = "线下回传凭证图片")
+    private List<String> receiptEvidenceJson;
+
+    @Schema(description = "线下回传备注")
+    private String receiptRemark;
+
+    @Schema(description = "线下回传确认人")
+    private Long receiptConfirmedBy;
+
+    @Schema(description = "线下回传确认时间")
+    private LocalDateTime receiptConfirmedAt;
 
     @Schema(description = "创建时间")
     private LocalDateTime createTime;

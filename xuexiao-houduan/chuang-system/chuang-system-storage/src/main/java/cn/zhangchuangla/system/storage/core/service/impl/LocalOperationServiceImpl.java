@@ -4,6 +4,7 @@ import cn.zhangchuangla.common.core.constant.Constants;
 import cn.zhangchuangla.common.core.enums.ResultCode;
 import cn.zhangchuangla.common.core.exception.FileException;
 import cn.zhangchuangla.common.core.exception.ParamException;
+import cn.zhangchuangla.common.core.utils.ProjectPathResolver;
 import cn.zhangchuangla.system.storage.async.StorageAsyncService;
 import cn.zhangchuangla.system.storage.constant.StorageConstants;
 import cn.zhangchuangla.system.storage.core.service.OperationService;
@@ -59,6 +60,9 @@ public class LocalOperationServiceImpl implements OperationService {
             throw new FileException("本地文件存储配置未找到");
         }
         localStorageConfig = JSON.parseObject(json, LocalStorageConfig.class);
+        localStorageConfig.setUploadPath(
+                ProjectPathResolver.resolveFrontendPublicDir(localStorageConfig.getUploadPath()).toString()
+        );
         return localStorageConfig;
     }
 

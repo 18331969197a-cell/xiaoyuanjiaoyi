@@ -153,7 +153,7 @@ const formSchema = computed((): VbenFormSchema[] => {
     :show-qrcode-login="false"
     :show-third-party-login="false"
     sub-title="失物招领，互助共享，让爱心传递校园每个角落"
-    title="校园互助圈 🎓"
+    title="校园互助失物招领平台"
     @submit="handleLogin"
   />
 </template>
