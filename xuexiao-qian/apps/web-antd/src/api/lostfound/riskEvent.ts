@@ -33,6 +33,11 @@ export interface RiskEventQueryParams {
   endTime?: string;
 }
 
+export interface ResolveRiskEventParams {
+  actionType?: string;
+  remark?: string;
+}
+
 interface MybatisPlusPage<T> {
   records: T[];
   total: number;
@@ -52,4 +57,13 @@ async function adminGetRiskEventList(params?: RiskEventQueryParams) {
   };
 }
 
-export { adminGetRiskEventList };
+async function adminResolveRiskEvent(
+  id: number,
+  params?: ResolveRiskEventParams,
+) {
+  return requestClient.post(`/lostfound/risk-event/admin/${id}/resolve`, null, {
+    params,
+  });
+}
+
+export { adminGetRiskEventList, adminResolveRiskEvent };

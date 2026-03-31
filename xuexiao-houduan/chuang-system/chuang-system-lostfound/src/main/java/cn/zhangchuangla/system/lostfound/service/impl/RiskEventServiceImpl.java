@@ -1,5 +1,6 @@
 package cn.zhangchuangla.system.lostfound.service.impl;
 
+import cn.zhangchuangla.common.core.utils.Assert;
 import cn.zhangchuangla.system.lostfound.mapper.BizRiskEventMapper;
 import cn.zhangchuangla.system.lostfound.model.entity.BizReport;
 import cn.zhangchuangla.system.lostfound.model.entity.BizRiskEvent;
@@ -175,6 +176,25 @@ public class RiskEventServiceImpl implements RiskEventService {
     public Page<BizRiskEvent> listAdminEvents(Page<BizRiskEvent> page, String targetType, Long targetId, String eventStatus,
                                               String actionType, LocalDateTime startTime, LocalDateTime endTime) {
         return riskEventMapper.selectAdminRiskEvents(page, targetType, targetId, eventStatus, actionType, startTime, endTime);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void resolveAdminEvent(Long id, String actionType, String remark, Long adminId) {
+        Assert.isTrue(id != null && id > 0, "风险事件ID不能为空");
+        BizRiskEvent event = riskEventMapper.selectById(id);
+        Assert.isTrue(event != null, "风险事件不存在");
+
+        LocalDateTime now = LocalDateTime.now();
+        if (actionType != null && !actionType.isBlank()) {
+            event.setActionType(actionType);
+        }
+        event.setRemark(remark);
+        event.setEventStatus("RESOLVED");
+        event.setResolvedBy(adminId);
+        event.setResolvedAt(now);
+        event.setUpdateTime(now);
+        riskEventMapper.updateById(event);
     }
 
     private String resolveRiskType(String targetType, String action) {

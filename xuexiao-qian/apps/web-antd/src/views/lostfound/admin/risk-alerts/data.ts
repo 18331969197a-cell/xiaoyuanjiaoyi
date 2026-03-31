@@ -1,6 +1,10 @@
 import type { VbenFormSchema } from '#/adapter/form';
 import type { VxeTableGridOptions } from '#/adapter/vxe-table';
 
+import { useAccess } from '@vben/access';
+
+const { hasAccessByCodes } = useAccess();
+
 const SOURCE_TYPE_TEXT: Record<string, string> = {
   HANDOVER: '交接',
   REPORT: '举报',
@@ -94,7 +98,9 @@ export function useGridFormSchema(): VbenFormSchema[] {
   ];
 }
 
-export function useColumns(): VxeTableGridOptions['columns'] {
+export function useColumns(
+  onActionClick?: (params: { code: string; row: any }) => void,
+): VxeTableGridOptions['columns'] {
   return [
     {
       type: 'seq',
@@ -229,6 +235,32 @@ export function useColumns(): VxeTableGridOptions['columns'] {
       field: 'resolvedAt',
       title: '处理时间',
       width: 180,
+    },
+    {
+      align: 'center',
+      cellRender: {
+        attrs: {
+          nameField: 'riskEvent',
+          nameTitle: '风险告警',
+          onClick: onActionClick,
+        },
+        name: 'CellOperation',
+        options: [
+          {
+            code: 'resolve',
+            text: '处理',
+            show: (row: any) =>
+              row.eventStatus === 'OPEN' &&
+              hasAccessByCodes(['lostfound:risk-alert:list']),
+          },
+        ],
+      },
+      field: 'operation',
+      fixed: 'right',
+      headerAlign: 'center',
+      showOverflow: false,
+      title: '操作',
+      width: 90,
     },
   ];
 }

@@ -32,4 +32,6 @@ public interface RiskEventService {
                                        String actionType,
                                        LocalDateTime startTime,
                                        LocalDateTime endTime);
+
+    void resolveAdminEvent(Long id, String actionType, String remark, Long adminId);
 }
